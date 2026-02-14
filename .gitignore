@@ -1,6 +1,7 @@
 node_modules/
 .env
  
- *dependiencies
+*dependiencies
 
+node_modules*
  

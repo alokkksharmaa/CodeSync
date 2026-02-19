@@ -75,7 +75,12 @@ App runs on `http://localhost:5173`
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide or [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for quick checklist.
+**🚀 Ready to deploy?** Start here: [START_HERE.md](START_HERE.md)
+
+**Quick guides:**
+- [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - Fast deployment (10 min)
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Complete guide (30 min)
+- [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) - Automated deployment (15 min)
 
 **TL;DR:**
 1. Deploy backend to Render/Railway

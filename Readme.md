@@ -51,6 +51,56 @@ A minimal full-stack application for real-time collaborative code editing in sha
 - User presence tracking
 - Clean, modular architecture
 
+## Quick Start (Local Development)
+
+### Backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Server runs on `http://localhost:3000`
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+App runs on `http://localhost:5173`
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide or [QUICK_DEPLOY.md](QUICK_DEPLOY.md) for quick checklist.
+
+**TL;DR:**
+1. Deploy backend to Render/Railway
+2. Update `frontend/.env.production` with backend URL
+3. Build frontend and push to GitHub
+4. Enable GitHub Pages
+
+## Environment Setup
+
+### Backend (.env)
+```bash
+PORT=3000
+FRONTEND_URL=http://localhost:5173
+```
+
+### Frontend (.env.development)
+```bash
+VITE_BACKEND_URL=http://localhost:3000
+```
+
+### Frontend (.env.production)
+```bash
+VITE_BACKEND_URL=https://your-backend-url.onrender.com
+```
+
 ## Setup & Installation
 
 ### Backend

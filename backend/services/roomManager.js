@@ -1,10 +1,10 @@
 /**
  * RoomManager - Manages in-memory room state
- * Each room stores: document content, connected users, and cursor positions
+ * Each room stores: document content, selected language, connected users, and cursor positions
  */
 class RoomManager {
   constructor() {
-    // rooms = { roomId: { content: string, users: Map<socketId, userData> } }
+    // rooms = { roomId: { content: string, language: string, users: Map<socketId, userData> } }
     // userData = { username: string, color: string, cursor: { line, column } }
     this.rooms = new Map();
   }
@@ -16,6 +16,7 @@ class RoomManager {
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, {
         content: '// Welcome to CodeSync!\n// Start coding together...\n',
+        language: 'javascript', // Default language
         users: new Map()
       });
     }
@@ -29,6 +30,7 @@ class RoomManager {
 
     return {
       content: room.content,
+      language: room.language, // Include language in room state
       users: this.getRoomUsers(roomId, socketId)
     };
   }
@@ -65,6 +67,41 @@ class RoomManager {
   getContent(roomId) {
     const room = this.rooms.get(roomId);
     return room ? room.content : null;
+  }
+
+  /**
+   * Update room language
+   */
+  updateLanguage(roomId, language) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.language = language;
+    }
+  }
+
+  /**
+   * Get current room language
+   */
+  getLanguage(roomId) {
+    const room = this.rooms.get(roomId);
+    return room ? room.language : 'javascript';
+  }
+  /**
+   * Update room language
+   */
+  updateLanguage(roomId, language) {
+    const room = this.rooms.get(roomId);
+    if (room) {
+      room.language = language;
+    }
+  }
+
+  /**
+   * Get current room language
+   */
+  getLanguage(roomId) {
+    const room = this.rooms.get(roomId);
+    return room ? room.language : 'javascript';
   }
 
   /**

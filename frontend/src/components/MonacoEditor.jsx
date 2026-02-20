@@ -7,7 +7,7 @@ import { throttle } from '../utils/userUtils';
  * MonacoEditor - Monaco-based code editor with real-time sync and cursor tracking
  * Handles cursor preservation, debounced updates, and remote cursor rendering
  */
-function MonacoEditor({ code, onChange, onCursorChange, remoteCursors = [] }) {
+function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange, remoteCursors = [] }) {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const isRemoteChange = useRef(false);
@@ -133,7 +133,7 @@ function MonacoEditor({ code, onChange, onCursorChange, remoteCursors = [] }) {
     <div ref={containerRef} style={{ position: 'relative', height: '100%' }}>
       <Editor
         height="100%"
-        defaultLanguage="javascript"
+        language={language}
         defaultValue={code}
         onChange={handleEditorChange}
         onMount={handleEditorDidMount}

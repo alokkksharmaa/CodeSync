@@ -15,6 +15,10 @@
     "express": "^5.2.1",
     "http": "^0.0.1-security",
     "socket": "^1.1.63",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "axios": "^1.7.2",
+    "cors": "^2.8.5"
   }
 }

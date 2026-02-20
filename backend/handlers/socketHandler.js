@@ -12,10 +12,10 @@ export default function socketHandler(io, socket, roomManager) {
     socket.join(roomId);
 
     // Get current document content and existing users
-    const { content, users } = roomManager.joinRoom(roomId, socket.id, username, color);
+    const { content, language, users } = roomManager.joinRoom(roomId, socket.id, username, color);
 
     // Send current state to the joining user
-    socket.emit('room_joined', { roomId, content, users });
+    socket.emit('room_joined', { roomId, content, language, users });
 
     // Notify others in the room about new user
     socket.to(roomId).emit('user_joined', {
@@ -68,6 +68,19 @@ export default function socketHandler(io, socket, roomManager) {
       userId: socket.id,
       cursor
     });
+  });
+
+  /**
+   * LANGUAGE_CHANGE - Broadcast language change to room
+   */
+  socket.on('language_change', ({ roomId, language }) => {
+    // Update language in room state
+    roomManager.updateLanguage(roomId, language);
+
+    // Broadcast to all users in room except sender
+    socket.to(roomId).emit('language_update', { language });
+
+    console.log(`Language changed to ${language} in room: ${roomId}`);
   });
 
   /**

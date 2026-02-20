@@ -5,6 +5,7 @@ import { generateUsername, generateUserColor } from '../utils/userUtils';
 
 function EditorRoom({ roomId, onLeave }) {
   const [code, setCode] = useState('');
+  const [language, setLanguage] = useState('javascript');
   const [userCount, setUserCount] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
   const [remoteCursors, setRemoteCursors] = useState([]);
@@ -30,8 +31,9 @@ function EditorRoom({ roomId, onLeave }) {
       });
     });
 
-    socket.on('room_joined', ({ content, users }) => {
+    socket.on('room_joined', ({ content, language: roomLanguage, users }) => {
       setCode(content);
+      setLanguage(roomLanguage || 'javascript');
       // Initialize with existing users in room
       setRemoteCursors(users || []);
     });
@@ -61,6 +63,11 @@ function EditorRoom({ roomId, onLeave }) {
           user.userId === userId ? { ...user, cursor } : user
         )
       );
+    });
+
+    socket.on('language_update', ({ language: newLanguage }) => {
+      // Update language when changed by another user
+      setLanguage(newLanguage);
     });
 
     socket.on('disconnect', () => {
@@ -95,6 +102,15 @@ function EditorRoom({ roomId, onLeave }) {
     socket.emit('cursor_position', { roomId, cursor });
   };
 
+  /**
+   * Handle language changes from dropdown
+   * Emits language_change event to sync with other users
+   */
+  const handleLanguageChange = (newLanguage) => {
+    setLanguage(newLanguage);
+    socket.emit('language_change', { roomId, language: newLanguage });
+  };
+
   const handleLeave = () => {
     socket.emit('leave_room', roomId);
     onLeave();
@@ -118,8 +134,24 @@ function EditorRoom({ roomId, onLeave }) {
         </div>
       </header>
       
+      {/* Language selector */}
+      <div className="language-selector">
+        <label htmlFor="language-dropdown">Language:</label>
+        <select 
+          id="language-dropdown"
+          value={language} 
+          onChange={(e) => handleLanguageChange(e.target.value)}
+          className="language-dropdown"
+        >
+          <option value="javascript">JavaScript</option>
+          <option value="python">Python</option>
+          <option value="cpp">C++</option>
+        </select>
+      </div>
+      
       <MonacoEditor 
         code={code} 
+        language={language}
         onChange={handleCodeChange}
         onCursorChange={handleCursorChange}
         remoteCursors={remoteCursors}

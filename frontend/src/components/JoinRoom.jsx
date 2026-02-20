@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import authService from '../services/authService';
 
-function JoinRoom({ onJoin }) {
+function JoinRoom({ onJoin, onLogout }) {
   const [roomId, setRoomId] = useState('');
+  const user = authService.getUser();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -13,8 +15,14 @@ function JoinRoom({ onJoin }) {
   return (
     <div className="join-container">
       <div className="join-card">
-        <h1>CodeSync</h1>
-        <p>Real-time collaborative coding</p>
+        <div className="join-header">
+          <h1>CodeSync</h1>
+          <button onClick={onLogout} className="logout-button">
+            Logout
+          </button>
+        </div>
+        <p>Welcome, {user?.username}!</p>
+        <p className="subtitle">Real-time collaborative coding</p>
         
         <form onSubmit={handleSubmit}>
           <input

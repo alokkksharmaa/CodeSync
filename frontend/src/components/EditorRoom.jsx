@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { socket, connectSocket, disconnectSocket } from '../services/socket';
 import MonacoEditor from './MonacoEditor';
-import { generateUsername, generateUserColor } from '../utils/userUtils';
+import ResizablePanel from './ResizablePanel';
+import authService from '../services/authService';
 
 function EditorRoom({ roomId, onLeave }) {
   const [code, setCode] = useState('');
@@ -9,13 +10,13 @@ function EditorRoom({ roomId, onLeave }) {
   const [userCount, setUserCount] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
   const [remoteCursors, setRemoteCursors] = useState([]);
+  const [output, setOutput] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [showOutput, setShowOutput] = useState(false);
+  const [outputLayout, setOutputLayout] = useState('horizontal'); // 'horizontal' or 'vertical'
   const isLocalChange = useRef(false);
   
-  // Generate user identity once
-  const userIdentity = useMemo(() => ({
-    username: generateUsername(),
-    color: generateUserColor()
-  }), []);
+  const user = authService.getUser();
 
   useEffect(() => {
     // Connect to socket server
@@ -24,11 +25,7 @@ function EditorRoom({ roomId, onLeave }) {
     // Socket event listeners
     socket.on('connect', () => {
       setIsConnected(true);
-      socket.emit('join_room', {
-        roomId,
-        username: userIdentity.username,
-        color: userIdentity.color
-      });
+      socket.emit('join_room', { roomId });
     });
 
     socket.on('room_joined', ({ content, language: roomLanguage, users }) => {
@@ -70,6 +67,20 @@ function EditorRoom({ roomId, onLeave }) {
       setLanguage(newLanguage);
     });
 
+    socket.on('execution_result', ({ username, result, timestamp }) => {
+      // Display execution result
+      const output = formatExecutionResult(username, result, timestamp);
+      setOutput(output);
+      setShowOutput(true);
+      setIsExecuting(false);
+    });
+
+    socket.on('execution_error', ({ error }) => {
+      setOutput(`Error: ${error}`);
+      setShowOutput(true);
+      setIsExecuting(false);
+    });
+
     socket.on('disconnect', () => {
       setIsConnected(false);
     });
@@ -83,13 +94,9 @@ function EditorRoom({ roomId, onLeave }) {
 
   /**
    * Handle code changes from Monaco editor
-   * Debounced updates are emitted to server
+   * Updates are debounced in MonacoEditor before calling this
    */
   const handleCodeChange = (newCode) => {
-    // Mark as local change
-    isLocalChange.current = true;
-    setCode(newCode);
-    
     // Emit change to server (already debounced in MonacoEditor)
     socket.emit('code_change', { roomId, content: newCode });
   };
@@ -109,6 +116,36 @@ function EditorRoom({ roomId, onLeave }) {
   const handleLanguageChange = (newLanguage) => {
     setLanguage(newLanguage);
     socket.emit('language_change', { roomId, language: newLanguage });
+  };
+
+  /**
+   * Handle code execution
+   */
+  const handleExecuteCode = () => {
+    setIsExecuting(true);
+    setOutput('Executing...');
+    setShowOutput(true);
+    socket.emit('execute_code', { roomId, code, language });
+  };
+
+  /**
+   * Format execution result for display
+   */
+  const formatExecutionResult = (username, result, timestamp) => {
+    const time = new Date(timestamp).toLocaleTimeString();
+    let output = `[${time}] Executed by ${username}\n`;
+    output += `Status: ${result.status}\n`;
+    output += `Time: ${result.time}s | Memory: ${result.memory}KB\n\n`;
+    
+    if (result.stdout) {
+      output += `Output:\n${result.stdout}\n`;
+    }
+    
+    if (result.stderr) {
+      output += `\nErrors:\n${result.stderr}`;
+    }
+    
+    return output;
   };
 
   const handleLeave = () => {
@@ -147,15 +184,81 @@ function EditorRoom({ roomId, onLeave }) {
           <option value="python">Python</option>
           <option value="cpp">C++</option>
         </select>
+        
+        <button 
+          onClick={handleExecuteCode}
+          className="run-button"
+          disabled={isExecuting || !code.trim()}
+        >
+          {isExecuting ? '⏳ Running...' : '▶ Run Code'}
+        </button>
+
+        <button 
+          onClick={() => setShowOutput(!showOutput)}
+          className="toggle-output-button"
+        >
+          {showOutput ? '📋 Hide Output' : '📋 Show Output'}
+        </button>
+
+        {showOutput && (
+          <>
+            <button 
+              onClick={() => setOutputLayout('horizontal')}
+              className={`layout-button ${outputLayout === 'horizontal' ? 'active' : ''}`}
+              title="Side by side"
+            >
+              ⬌
+            </button>
+            <button 
+              onClick={() => setOutputLayout('vertical')}
+              className={`layout-button ${outputLayout === 'vertical' ? 'active' : ''}`}
+              title="Top and bottom"
+            >
+              ⬍
+            </button>
+          </>
+        )}
       </div>
       
-      <MonacoEditor 
-        code={code} 
-        language={language}
-        onChange={handleCodeChange}
-        onCursorChange={handleCursorChange}
-        remoteCursors={remoteCursors}
-      />
+      <div className="editor-layout">
+        {showOutput ? (
+          <ResizablePanel 
+            direction={outputLayout}
+            defaultSize={outputLayout === 'horizontal' ? 60 : 70}
+            minSize={30}
+            maxSize={80}
+          >
+            <MonacoEditor 
+              code={code} 
+              language={language}
+              onChange={handleCodeChange}
+              onCursorChange={handleCursorChange}
+              remoteCursors={remoteCursors}
+            />
+            
+            <div className="output-panel">
+              <div className="output-header">
+                <h3>Output</h3>
+                <button 
+                  onClick={() => setOutput('')}
+                  className="clear-button"
+                >
+                  Clear
+                </button>
+              </div>
+              <pre className="output-content">{output || 'No output yet. Click "Run Code" to execute.'}</pre>
+            </div>
+          </ResizablePanel>
+        ) : (
+          <MonacoEditor 
+            code={code} 
+            language={language}
+            onChange={handleCodeChange}
+            onCursorChange={handleCursorChange}
+            remoteCursors={remoteCursors}
+          />
+        )}
+      </div>
     </div>
   );
 }

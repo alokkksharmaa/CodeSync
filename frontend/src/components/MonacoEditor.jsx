@@ -13,6 +13,7 @@ function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange,
   const isRemoteChange = useRef(false);
   const debounceTimer = useRef(null);
   const [cursorPositions, setCursorPositions] = useState({});
+  const lastEmittedCode = useRef(code);
 
   /**
    * Called when Monaco editor mounts
@@ -40,9 +41,11 @@ function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange,
 
   /**
    * Handle local content changes (user typing)
-   * Debounce to avoid flooding server with updates
+   * Update immediately for responsive typing, debounce server updates
    */
   const handleEditorChange = (value) => {
+    const newValue = value || '';
+    
     // Skip if this change came from remote update
     if (isRemoteChange.current) {
       isRemoteChange.current = false;
@@ -54,9 +57,15 @@ function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange,
       clearTimeout(debounceTimer.current);
     }
 
-    // Debounce: emit after 300ms of no typing
+    // Debounce: emit to server after 300ms of no typing
     debounceTimer.current = setTimeout(() => {
-      onChange(value || '');
+      // Only emit if content actually changed
+      if (newValue !== lastEmittedCode.current) {
+        lastEmittedCode.current = newValue;
+        if (onChange) {
+          onChange(newValue);
+        }
+      }
     }, 300);
   };
 
@@ -69,8 +78,8 @@ function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange,
     const editor = editorRef.current;
     const currentValue = editor.getValue();
 
-    // Only update if content actually changed
-    if (currentValue !== code) {
+    // Only update if content actually changed and it's different from what we have
+    if (currentValue !== code && code !== lastEmittedCode.current) {
       // Save cursor position
       const position = editor.getPosition();
       const scrollTop = editor.getScrollTop();
@@ -80,6 +89,7 @@ function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange,
 
       // Update content
       editor.setValue(code);
+      lastEmittedCode.current = code;
 
       // Restore cursor position if valid
       if (position) {
@@ -130,7 +140,7 @@ function MonacoEditor({ code, language = 'javascript', onChange, onCursorChange,
   }, []);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', height: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', height: '100%', flex: 1 }}>
       <Editor
         height="100%"
         language={language}

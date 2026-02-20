@@ -12,7 +12,7 @@ class RoomManager {
   /**
    * Join a room - creates room if doesn't exist
    */
-  joinRoom(roomId, socketId, username, color) {
+  joinRoom(roomId, socketId, username, color, userId) {
     if (!this.rooms.has(roomId)) {
       this.rooms.set(roomId, {
         content: '// Welcome to CodeSync!\n// Start coding together...\n',
@@ -23,6 +23,7 @@ class RoomManager {
 
     const room = this.rooms.get(roomId);
     room.users.set(socketId, {
+      userId,
       username,
       color,
       cursor: { line: 1, column: 1 }

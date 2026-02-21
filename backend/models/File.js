@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const fileSchema = new mongoose.Schema(
   {
@@ -6,11 +6,23 @@ const fileSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Workspace',
       required: true,
-      unique: true, // one file document per workspace (single-file model)
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    path: {
+      type: String,
+      default: '/',
     },
     content: {
       type: String,
       default: '',
+    },
+    language: {
+      type: String,
+      default: 'javascript',
     },
     lastEditedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -21,4 +33,8 @@ const fileSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('File', fileSchema);
+// Compound index to ensure unique file path per workspace
+fileSchema.index({ workspaceId: 1, path: 1, name: 1 }, { unique: true });
+
+const File = mongoose.model('File', fileSchema);
+export default File;

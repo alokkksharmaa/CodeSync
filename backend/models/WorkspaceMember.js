@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const workspaceMemberSchema = new mongoose.Schema(
   {
@@ -25,7 +25,7 @@ const workspaceMemberSchema = new mongoose.Schema(
   { timestamps: false }
 );
 
-// Prevent duplicate membership: one user can only have one role per workspace
 workspaceMemberSchema.index({ workspaceId: 1, userId: 1 }, { unique: true });
 
-module.exports = mongoose.model('WorkspaceMember', workspaceMemberSchema);
+const WorkspaceMember = mongoose.model('WorkspaceMember', workspaceMemberSchema);
+export default WorkspaceMember;

@@ -1,14 +1,13 @@
-const WorkspaceMember = require('../models/WorkspaceMember');
+import WorkspaceMember from '../models/WorkspaceMember.js';
 
 /**
  * verifyMembership
- * Checks that req.user is a member of the workspace in req.params.id.
+ * Checks that req.user is a member of the workspace in req.params.id or req.params.workspaceId.
  * Attaches req.membership = { role } on success.
- * Must be used AFTER authMiddleware.
  */
-const verifyMembership = async (req, res, next) => {
+export const verifyMembership = async (req, res, next) => {
   try {
-    const workspaceId = req.params.id;
+    const workspaceId = req.params.workspaceId || req.params.id;
 
     if (!workspaceId) {
       return res.status(400).json({ message: 'Workspace ID is required.' });
@@ -34,9 +33,8 @@ const verifyMembership = async (req, res, next) => {
 /**
  * requireRole(...roles)
  * Factory that returns middleware enforcing a minimum role.
- * Usage: requireRole('owner', 'editor')
  */
-const requireRole = (...roles) => {
+export const requireRole = (...roles) => {
   return (req, res, next) => {
     if (!req.membership || !roles.includes(req.membership.role)) {
       return res.status(403).json({
@@ -46,5 +44,3 @@ const requireRole = (...roles) => {
     next();
   };
 };
-
-module.exports = { verifyMembership, requireRole };

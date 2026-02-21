@@ -1,10 +1,10 @@
-const Workspace = require('../models/Workspace');
-const WorkspaceMember = require('../models/WorkspaceMember');
-const File = require('../models/File');
-const User = require('../models/User');
+import Workspace from '../models/Workspace.js';
+import WorkspaceMember from '../models/WorkspaceMember.js';
+import File from '../models/File.js';
+import User from '../models/User.js';
 
 // ─── POST /api/workspaces ─────────────────────────────────────────────────────
-const createWorkspace = async (req, res) => {
+export const createWorkspace = async (req, res) => {
   try {
     const { name, language } = req.body;
 
@@ -26,10 +26,13 @@ const createWorkspace = async (req, res) => {
       role: 'owner',
     });
 
-    // 3. Create initial empty file
+    // 3. Create initial main file
     const file = await File.create({
       workspaceId: workspace._id,
-      content: '',
+      name: 'main.js',
+      path: '/',
+      content: '// Welcome to CodeSync\nconsole.log("Hello World");',
+      language: language || 'javascript',
       lastEditedBy: req.user.id,
     });
 
@@ -41,9 +44,8 @@ const createWorkspace = async (req, res) => {
 };
 
 // ─── GET /api/workspaces ──────────────────────────────────────────────────────
-const getWorkspaces = async (req, res) => {
+export const getWorkspaces = async (req, res) => {
   try {
-    // Find all memberships for this user
     const memberships = await WorkspaceMember.find({ userId: req.user.id })
       .populate({
         path: 'workspaceId',
@@ -51,7 +53,6 @@ const getWorkspaces = async (req, res) => {
       })
       .sort({ addedAt: -1 });
 
-    // Filter out any orphaned memberships where workspace was deleted
     const workspaces = memberships
       .filter((m) => m.workspaceId) 
       .map((m) => ({
@@ -68,7 +69,7 @@ const getWorkspaces = async (req, res) => {
 };
 
 // ─── GET /api/workspaces/:id ──────────────────────────────────────────────────
-const getWorkspace = async (req, res) => {
+export const getWorkspace = async (req, res) => {
   try {
     const workspaceId = req.params.id;
 
@@ -81,8 +82,8 @@ const getWorkspace = async (req, res) => {
       return res.status(404).json({ message: 'Workspace not found.' });
     }
 
-    // Load file content
-    const file = await File.findOne({ workspaceId });
+    // Load ALL files for this workspace
+    const files = await File.find({ workspaceId }).sort({ name: 1 });
 
     // Load all members with user info
     const members = await WorkspaceMember.find({ workspaceId }).populate(
@@ -92,9 +93,9 @@ const getWorkspace = async (req, res) => {
 
     return res.status(200).json({
       workspace,
-      file,
+      files,
       members,
-      myRole: req.membership.role, // attached by workspaceAuth middleware
+      myRole: req.membership.role,
     });
   } catch (error) {
     console.error('[getWorkspace error]', error);
@@ -103,7 +104,7 @@ const getWorkspace = async (req, res) => {
 };
 
 // ─── POST /api/workspaces/:id/share ──────────────────────────────────────────
-const shareWorkspace = async (req, res) => {
+export const shareWorkspace = async (req, res) => {
   try {
     const workspaceId = req.params.id;
     const { email, role } = req.body;
@@ -116,23 +117,19 @@ const shareWorkspace = async (req, res) => {
       return res.status(400).json({ message: 'Role must be "editor" or "viewer".' });
     }
 
-    // Only owners can share
     if (req.membership.role !== 'owner') {
       return res.status(403).json({ message: 'Only workspace owners can share.' });
     }
 
-    // Find the target user by email
     const targetUser = await User.findOne({ email: email.toLowerCase() });
     if (!targetUser) {
       return res.status(404).json({ message: 'No user found with that email.' });
     }
 
-    // Prevent sharing with yourself
     if (targetUser._id.toString() === req.user.id) {
       return res.status(400).json({ message: 'You cannot share a workspace with yourself.' });
     }
 
-    // Create membership (unique index prevents duplicates)
     try {
       await WorkspaceMember.create({
         workspaceId,
@@ -141,7 +138,6 @@ const shareWorkspace = async (req, res) => {
       });
     } catch (err) {
       if (err.code === 11000) {
-        // Update role if already a member
         await WorkspaceMember.findOneAndUpdate(
           { workspaceId, userId: targetUser._id },
           { role },
@@ -152,7 +148,6 @@ const shareWorkspace = async (req, res) => {
       }
     }
 
-    // Return updated member list
     const members = await WorkspaceMember.find({ workspaceId }).populate(
       'userId',
       'username email'
@@ -164,5 +159,3 @@ const shareWorkspace = async (req, res) => {
     return res.status(500).json({ message: 'Failed to share workspace.' });
   }
 };
-
-module.exports = { createWorkspace, getWorkspaces, getWorkspace, shareWorkspace };

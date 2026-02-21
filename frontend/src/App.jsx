@@ -1,55 +1,50 @@
-import { useState, useEffect } from 'react';
-import Login from './components/Login';
-import JoinRoom from './components/JoinRoom';
-import EditorRoom from './components/EditorRoom';
-import authService from './services/authService';
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
+import ProtectedRoute from './routes/ProtectedRoute'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Dashboard from './pages/Dashboard'
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentRoom, setCurrentRoom] = useState(null);
-  const [loading, setLoading] = useState(true);
+const App = () => {
+  const { isAuthenticated, loading } = useAuth()
 
-  useEffect(() => {
-    // Check if user is already authenticated
-    setIsAuthenticated(authService.isAuthenticated());
-    setLoading(false);
-  }, []);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    setIsAuthenticated(false);
-    setCurrentRoom(null);
-  };
-
-  const handleJoinRoom = (roomId) => {
-    setCurrentRoom(roomId);
-  };
-
-  const handleLeaveRoom = () => {
-    setCurrentRoom(null);
-  };
-
-  if (loading) {
-    return <div className="app">Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
+  if (loading) return null // Prevents flash before auth state is rehydrated
 
   return (
-    <div className="app">
-      {!currentRoom ? (
-        <JoinRoom onJoin={handleJoinRoom} onLogout={handleLogout} />
-      ) : (
-        <EditorRoom roomId={currentRoom} onLeave={handleLeaveRoom} />
-      )}
-    </div>
-  );
+    <Routes>
+      {/* Public routes */}
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
+      />
+      <Route
+        path="/signup"
+        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />}
+      />
+
+      {/* Protected routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Default redirect */}
+      <Route
+        path="/"
+        element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}
+      />
+
+      {/* Catch-all */}
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}
+      />
+    </Routes>
+  )
 }
 
-export default App;
+export default App

@@ -4,11 +4,12 @@ import ProtectedRoute from './routes/ProtectedRoute'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
+import Workspace from './pages/Workspace'
 
 const App = () => {
   const { isAuthenticated, loading } = useAuth()
 
-  if (loading) return null // Prevents flash before auth state is rehydrated
+  if (loading) return null
 
   return (
     <Routes>
@@ -31,18 +32,18 @@ const App = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* Default redirect */}
       <Route
-        path="/"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}
+        path="/workspace/:id"
+        element={
+          <ProtectedRoute>
+            <Workspace />
+          </ProtectedRoute>
+        }
       />
 
-      {/* Catch-all */}
-      <Route
-        path="*"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />}
-      />
+      {/* Default + catch-all */}
+      <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+      <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
     </Routes>
   )
 }

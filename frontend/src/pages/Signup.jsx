@@ -58,7 +58,7 @@ const Signup = () => {
               name="username"
               type="text"
               className="form-input"
-              placeholder="johndoe"
+              placeholder="Your Name"
               value={form.username}
               onChange={handleChange}
               autoComplete="username"
@@ -73,7 +73,7 @@ const Signup = () => {
               name="email"
               type="email"
               className="form-input"
-              placeholder="john@example.com"
+              placeholder="YourEmail@example.com"
               value={form.email}
               onChange={handleChange}
               autoComplete="email"
@@ -88,7 +88,7 @@ const Signup = () => {
               name="password"
               type="password"
               className="form-input"
-              placeholder="At least 6 characters"
+              placeholder="Your Password"
               value={form.password}
               onChange={handleChange}
               autoComplete="new-password"

@@ -1,15 +1,15 @@
-require('dotenv').config();
+import 'dotenv/config';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import mongoose from 'mongoose';
 
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const mongoose = require('mongoose');
-
-const authRoutes = require('./routes/authRoutes');
-const workspaceRoutes = require('./routes/workspaceRoutes');
-const authMiddleware = require('./middleware/authMiddleware');
-const File = require('./models/File');
+import authRoutes from './routes/authRoutes.js';
+import workspaceRoutes from './routes/workspaceRoutes.js';
+import fileRoutes from './routes/fileRoutes.js';
+import authMiddleware from './middleware/authMiddleware.js';
+import File from './models/File.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +40,7 @@ app.get('/health', (req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/files', fileRoutes);
 
 // GET /api/me — protected example
 app.get('/api/me', authMiddleware, (req, res) => {
@@ -47,65 +48,77 @@ app.get('/api/me', authMiddleware, (req, res) => {
 });
 
 // ─── Socket.IO ────────────────────────────────────────────────────────────────
-// Debounce timers keyed by workspaceId for DB persistence
+// Debounce timers keyed by fileId for DB persistence
 const saveTimers = {};
 
 io.on('connection', (socket) => {
   console.log(`[socket] connected: ${socket.id}`);
 
   // ── join_workspace ──────────────────────────────────────────────────────────
-  // Payload: { workspaceId, username, color }
-  socket.on('join_workspace', async ({ workspaceId, username, color }) => {
+  socket.on('join_workspace', ({ workspaceId, username, color }) => {
     if (!workspaceId) return;
-
-    socket.join(workspaceId);
+    socket.join(`workspace:${workspaceId}`);
     socket.data.workspaceId = workspaceId;
     socket.data.username = username;
+    
+    console.log(`[socket] ${username} joined workspace room: workspace:${workspaceId}`);
+    
+    // Notify others in the workspace (presence list only)
+    socket.to(`workspace:${workspaceId}`).emit('user_joined', { id: socket.id, username, color });
+  });
 
-    console.log(`[socket] ${username} joined workspace ${workspaceId}`);
+  // ── join_file ───────────────────────────────────────────────────────────────
+  socket.on('join_file', async ({ fileId }) => {
+    if (!fileId) return;
+    
+    // Leave previous file rooms if any
+    const rooms = Array.from(socket.rooms);
+    rooms.forEach(room => {
+      if (room.startsWith('file:')) socket.leave(room);
+    });
 
-    // Load saved file content from MongoDB for the joining client
+    socket.join(`file:${fileId}`);
+    console.log(`[socket] ${socket.data.username} joined file room: file:${fileId}`);
+
+    // Load file content
     try {
-      const file = await File.findOne({ workspaceId });
-      socket.emit('workspace_joined', {
+      const file = await File.findById(fileId);
+      socket.emit('file_joined', {
+        fileId,
         code: file?.content || '',
       });
     } catch (err) {
-      console.error('[socket] Failed to load workspace file:', err.message);
-      socket.emit('workspace_joined', { code: '' });
+      console.error('[socket] Failed to load file:', err.message);
+      socket.emit('file_joined', { fileId, code: '' });
     }
-
-    // Notify others in the workspace
-    socket.to(workspaceId).emit('user_joined', { id: socket.id, username, color });
   });
 
   // ── code_change ─────────────────────────────────────────────────────────────
-  // Payload: { workspaceId, code, userId }
-  socket.on('code_change', ({ workspaceId, code, userId }) => {
-    if (!workspaceId) return;
+  socket.on('code_change', ({ fileId, code, userId }) => {
+    if (!fileId) return;
 
-    // Broadcast to all other clients in the workspace immediately
-    socket.to(workspaceId).emit('code_update', { code });
+    // Broadcast only to clients in this file room
+    socket.to(`file:${fileId}`).emit('code_update', { fileId, code });
 
-    // Debounce DB write: wait 1.5s of inactivity before persisting
-    if (saveTimers[workspaceId]) clearTimeout(saveTimers[workspaceId]);
-    saveTimers[workspaceId] = setTimeout(async () => {
+    // Debounce DB write: wait 1.5s
+    if (saveTimers[fileId]) clearTimeout(saveTimers[fileId]);
+    saveTimers[fileId] = setTimeout(async () => {
       try {
-        await File.findOneAndUpdate(
-          { workspaceId },
-          { content: code, lastEditedBy: userId || null },
-          { new: true, upsert: true }
+        await File.findByIdAndUpdate(
+          fileId,
+          { content: code, lastEditedBy: userId || null }
         );
-        delete saveTimers[workspaceId];
+        delete saveTimers[fileId];
       } catch (err) {
         console.error('[socket] Failed to persist code:', err.message);
       }
     }, 1500);
   });
 
-  // ── cursor_position (unchanged from Phase 1) ────────────────────────────────
-  socket.on('cursor_position', ({ workspaceId, position, username, color }) => {
-    socket.to(workspaceId).emit('cursor_update', {
+  // ── cursor_position ────────────────────────────────────────────────────────
+  socket.on('cursor_position', ({ fileId, position, username, color }) => {
+    if (!fileId) return;
+    socket.to(`file:${fileId}`).emit('cursor_update', {
       userId: socket.id,
       position,
       username,
@@ -113,26 +126,18 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ── leave_workspace ─────────────────────────────────────────────────────────
-  socket.on('leave_workspace', ({ workspaceId }) => {
-    handleLeave(socket, workspaceId);
-  });
-
   // ── disconnect ──────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const workspaceId = socket.data.workspaceId;
-    if (workspaceId) handleLeave(socket, workspaceId);
+    if (workspaceId) {
+      socket.to(`workspace:${workspaceId}`).emit('user_left', {
+        userId: socket.id,
+        username: socket.data.username,
+      });
+    }
     console.log(`[socket] disconnected: ${socket.id}`);
   });
 });
-
-function handleLeave(socket, workspaceId) {
-  socket.leave(workspaceId);
-  socket.to(workspaceId).emit('user_left', {
-    userId: socket.id,
-    username: socket.data.username,
-  });
-}
 
 // ─── MongoDB + Server Start ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;

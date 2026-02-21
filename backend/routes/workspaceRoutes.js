@@ -1,13 +1,14 @@
-const express = require('express');
-const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
-const { verifyMembership } = require('../middleware/workspaceAuth');
-const {
+import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
+import { verifyMembership } from '../middleware/workspaceAuth.js';
+import {
   createWorkspace,
   getWorkspaces,
   getWorkspace,
   shareWorkspace,
-} = require('../controllers/workspaceController');
+} from '../controllers/workspaceController.js';
+
+const router = express.Router();
 
 // All workspace routes require authentication
 router.use(authMiddleware);
@@ -18,10 +19,10 @@ router.post('/', createWorkspace);
 // GET /api/workspaces — list all workspaces for the logged-in user
 router.get('/', getWorkspaces);
 
-// GET /api/workspaces/:id — get workspace details + file content
+// GET /api/workspaces/:id — get workspace details + file list
 router.get('/:id', verifyMembership, getWorkspace);
 
 // POST /api/workspaces/:id/share — share with another user (owner only)
 router.post('/:id/share', verifyMembership, shareWorkspace);
 
-module.exports = router;
+export default router;

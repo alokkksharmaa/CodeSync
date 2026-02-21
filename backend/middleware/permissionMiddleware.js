@@ -55,6 +55,30 @@ export const requireRole = (minRole) => {
 };
 
 /**
+ * checkRole
+ * Middleware to check role on an ALREADY POPULATED req.membership.
+ * Useful after verifyFileAccess.
+ */
+export const checkRole = (minRole) => {
+  return (req, res, next) => {
+    if (!req.membership) {
+      return res.status(403).json({ message: 'Access denied: membership not verified.' });
+    }
+
+    const userLevel = roleLevels[req.membership.role] || 0;
+    const targetLevel = roleLevels[minRole] || 0;
+
+    if (userLevel < targetLevel) {
+      return res.status(403).json({ 
+        message: `Access denied: requires at least ${minRole} role.` 
+      });
+    }
+
+    next();
+  };
+};
+
+/**
  * isOwner
  * Shorthand for requireRole('owner')
  */

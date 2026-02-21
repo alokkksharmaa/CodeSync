@@ -22,7 +22,7 @@ router.use(authMiddleware);
 // ─── Workspace CRUD ───────────────────────────────────────────────────────────
 router.post('/', createWorkspace);
 router.get('/', getWorkspaces);
-router.get('/:id', isEditor, getWorkspace); 
+router.get('/:id', requireRole('viewer'), getWorkspace); 
 router.delete('/:id', isOwner, deleteWorkspace);
 router.patch('/:id/settings', isOwner, updateWorkspaceSettings);
 

@@ -32,6 +32,7 @@ app.use(
 
 // ─── HTTP Middleware ───────────────────────────────────────────────────────────
 app.use(express.json());
+app.set('io', io);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
@@ -139,6 +140,12 @@ io.on('connection', (socket) => {
       username,
       color,
     });
+  });
+
+  // ── role_sync (internal) ──────────────────────────────────────────────────
+  socket.on('role_sync', ({ role }) => {
+    socket.data.role = role;
+    console.log(`[socket] Role sync for ${socket.data.username}: ${role}`);
   });
 
   // ── disconnect ──────────────────────────────────────────────────────────────

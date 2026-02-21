@@ -104,6 +104,16 @@ export const updateMemberRole = async (req, res) => {
       metadata: { oldRole, newRole: role }
     });
 
+    // Notify user via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`workspace:${workspaceId}`).emit('member_updated', {
+        userId,
+        role,
+        oldRole
+      });
+    }
+
     return res.status(200).json({ message: 'Role updated successfully.' });
   } catch (error) {
     console.error('[updateMemberRole error]', error);
@@ -137,6 +147,12 @@ export const removeMember = async (req, res) => {
       actionType: 'MEMBER_REMOVED',
       targetId: userId
     });
+
+    // Notify via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`workspace:${workspaceId}`).emit('member_removed', { userId });
+    }
 
     return res.status(200).json({ message: 'Member removed successfully.' });
   } catch (error) {

@@ -122,6 +122,30 @@ const Workspace = () => {
       setConnectedUsers((prev) => prev.filter((u) => u.username !== username));
     });
 
+    socket.on('member_updated', ({ userId, role }) => {
+      // Update members list
+      setMembers(prev => prev.map(m => 
+        m.user._id === userId ? { ...m, role } : m
+      ));
+
+      // If IT'S ME, update myRole and handle UI changes
+      if (userId === user?.id) {
+        setMyRole(role);
+        toast(`Your role has been updated to ${role}`, { icon: '🔐' });
+        // Update socket data for server-side enforcement
+        socket.emit('role_sync', { role });
+      }
+    });
+
+    socket.on('member_removed', ({ userId }) => {
+      setMembers(prev => prev.filter(m => m.user._id !== userId));
+      
+      if (userId === user?.id) {
+        toast.error('You have been removed from this workspace');
+        navigate('/dashboard');
+      }
+    });
+
     return () => {
       socket.disconnect();
     };

@@ -1,5 +1,6 @@
 import File from '../models/File.js';
 import FileVersion from '../models/FileVersion.js';
+import { logActivity } from '../utils/logger.js';
 
 // ─── POST /api/files ─────────────────────────────────────────────────────────
 export const createFile = async (req, res) => {
@@ -17,6 +18,14 @@ export const createFile = async (req, res) => {
       language: language || 'javascript',
       lastEditedBy: req.user.id,
       content: '', // Initial empty content
+    });
+
+    logActivity({
+      workspaceId,
+      userId: req.user.id,
+      actionType: 'FILE_CREATED',
+      targetId: file._id,
+      metadata: { name: file.name }
     });
 
     return res.status(201).json(file);
@@ -84,6 +93,14 @@ export const renameFile = async (req, res) => {
       return res.status(404).json({ message: 'File not found.' });
     }
 
+    logActivity({
+      workspaceId: file.workspaceId,
+      userId: req.user.id,
+      actionType: 'FILE_RENAMED',
+      targetId: file._id,
+      metadata: { name }
+    });
+
     return res.status(200).json(file);
   } catch (error) {
     console.error('[renameFile error]', error);
@@ -101,6 +118,14 @@ export const deleteFile = async (req, res) => {
 
     // Also delete version history
     await FileVersion.deleteMany({ fileId: req.params.id });
+
+    logActivity({
+      workspaceId: file.workspaceId,
+      userId: req.user.id,
+      actionType: 'FILE_DELETED',
+      targetId: file._id,
+      metadata: { name: file.name }
+    });
 
     return res.status(200).json({ message: 'File and history deleted.' });
   } catch (error) {

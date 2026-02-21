@@ -24,7 +24,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Optionally clear storage and redirect — AuthContext handles this via state
       localStorage.removeItem('codesync_token')
       localStorage.removeItem('codesync_user')
     }

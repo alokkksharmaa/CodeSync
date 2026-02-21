@@ -17,12 +17,15 @@ const workspaceMemberSchema = new mongoose.Schema(
       enum: ['owner', 'editor', 'viewer'],
       default: 'editor',
     },
-    addedAt: {
-      type: Date,
-      default: Date.now,
+    invitedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
   },
-  { timestamps: false }
+  { 
+    timestamps: true 
+  }
 );
 
 workspaceMemberSchema.index({ workspaceId: 1, userId: 1 }, { unique: true });

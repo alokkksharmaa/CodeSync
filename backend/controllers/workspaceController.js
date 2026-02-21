@@ -2,6 +2,7 @@ import Workspace from '../models/Workspace.js';
 import WorkspaceMember from '../models/WorkspaceMember.js';
 import File from '../models/File.js';
 import User from '../models/User.js';
+import { logActivity } from '../utils/logger.js';
 
 // ─── POST /api/workspaces ─────────────────────────────────────────────────────
 export const createWorkspace = async (req, res) => {
@@ -12,21 +13,18 @@ export const createWorkspace = async (req, res) => {
       return res.status(400).json({ message: 'Workspace name is required.' });
     }
 
-    // 1. Create workspace
     const workspace = await Workspace.create({
       name: name.trim(),
       owner: req.user.id,
       language: language || 'javascript',
     });
 
-    // 2. Create owner membership
     const membership = await WorkspaceMember.create({
       workspaceId: workspace._id,
       userId: req.user.id,
       role: 'owner',
     });
 
-    // 3. Create initial main file
     const file = await File.create({
       workspaceId: workspace._id,
       name: 'main.js',
@@ -58,7 +56,7 @@ export const getWorkspaces = async (req, res) => {
       .map((m) => ({
         workspace: m.workspaceId,
         role: m.role,
-        addedAt: m.addedAt,
+        addedAt: m.createdAt,
       }));
 
     return res.status(200).json(workspaces);
@@ -82,10 +80,13 @@ export const getWorkspace = async (req, res) => {
       return res.status(404).json({ message: 'Workspace not found.' });
     }
 
-    // Load ALL files for this workspace
-    const files = await File.find({ workspaceId }).sort({ name: 1 });
+    let files = await File.find({ workspaceId }).sort({ name: 1 });
+    files = files.map(f => {
+      const doc = f.toObject();
+      if (!doc.name) doc.name = 'main.js';
+      return doc;
+    });
 
-    // Load all members with user info
     const members = await WorkspaceMember.find({ workspaceId }).populate(
       'userId',
       'username email'
@@ -94,7 +95,12 @@ export const getWorkspace = async (req, res) => {
     return res.status(200).json({
       workspace,
       files,
-      members,
+      members: members.map(m => ({
+        _id: m._id,
+        user: m.userId,
+        role: m.role,
+        addedAt: m.createdAt
+      })),
       myRole: req.membership.role,
     });
   } catch (error) {
@@ -103,59 +109,51 @@ export const getWorkspace = async (req, res) => {
   }
 };
 
-// ─── POST /api/workspaces/:id/share ──────────────────────────────────────────
-export const shareWorkspace = async (req, res) => {
+// ─── DELETE /api/workspaces/:id ──────────────────────────────────────────────
+export const deleteWorkspace = async (req, res) => {
   try {
     const workspaceId = req.params.id;
-    const { email, role } = req.body;
 
-    if (!email || !role) {
-      return res.status(400).json({ message: 'Email and role are required.' });
-    }
+    // Delete files, memberships, logs, and workspace
+    await Workspace.findByIdAndDelete(workspaceId);
+    await WorkspaceMember.deleteMany({ workspaceId });
+    await File.deleteMany({ workspaceId });
+    // Activities could stay or go, usually stay for record
 
-    if (!['editor', 'viewer'].includes(role)) {
-      return res.status(400).json({ message: 'Role must be "editor" or "viewer".' });
-    }
+    logActivity({
+      workspaceId,
+      userId: req.user.id,
+      actionType: 'WORKSPACE_DELETED'
+    });
 
-    if (req.membership.role !== 'owner') {
-      return res.status(403).json({ message: 'Only workspace owners can share.' });
-    }
+    return res.status(200).json({ message: 'Workspace and all associated data deleted.' });
+  } catch (error) {
+    console.error('[deleteWorkspace error]', error);
+    return res.status(500).json({ message: 'Failed to delete workspace.' });
+  }
+};
 
-    const targetUser = await User.findOne({ email: email.toLowerCase() });
-    if (!targetUser) {
-      return res.status(404).json({ message: 'No user found with that email.' });
-    }
+// ─── PATCH /api/workspaces/:id/settings ──────────────────────────────────────
+export const updateWorkspaceSettings = async (req, res) => {
+  try {
+    const { name, language } = req.body;
+    const workspaceId = req.params.id;
 
-    if (targetUser._id.toString() === req.user.id) {
-      return res.status(400).json({ message: 'You cannot share a workspace with yourself.' });
-    }
-
-    try {
-      await WorkspaceMember.create({
-        workspaceId,
-        userId: targetUser._id,
-        role,
-      });
-    } catch (err) {
-      if (err.code === 11000) {
-        await WorkspaceMember.findOneAndUpdate(
-          { workspaceId, userId: targetUser._id },
-          { role },
-          { new: true }
-        );
-      } else {
-        throw err;
-      }
-    }
-
-    const members = await WorkspaceMember.find({ workspaceId }).populate(
-      'userId',
-      'username email'
+    const workspace = await Workspace.findByIdAndUpdate(
+      workspaceId,
+      { name, language },
+      { new: true }
     );
 
-    return res.status(200).json({ message: `Shared with ${targetUser.username}.`, members });
+    logActivity({
+      workspaceId,
+      userId: req.user.id,
+      actionType: 'WORKSPACE_UPDATED',
+      metadata: { name, language }
+    });
+
+    return res.status(200).json(workspace);
   } catch (error) {
-    console.error('[shareWorkspace error]', error);
-    return res.status(500).json({ message: 'Failed to share workspace.' });
+    return res.status(500).json({ message: 'Failed to update settings.' });
   }
 };

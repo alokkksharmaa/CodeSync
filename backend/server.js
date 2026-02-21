@@ -10,6 +10,7 @@ import workspaceRoutes from './routes/workspaceRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
 import authMiddleware from './middleware/authMiddleware.js';
 import File from './models/File.js';
+import WorkspaceMember from './models/WorkspaceMember.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -48,39 +49,50 @@ app.get('/api/me', authMiddleware, (req, res) => {
 });
 
 // ─── Socket.IO ────────────────────────────────────────────────────────────────
-// Debounce timers keyed by fileId for DB persistence
 const saveTimers = {};
 
 io.on('connection', (socket) => {
   console.log(`[socket] connected: ${socket.id}`);
 
   // ── join_workspace ──────────────────────────────────────────────────────────
-  socket.on('join_workspace', ({ workspaceId, username, color }) => {
+  socket.on('join_workspace', async ({ workspaceId, username, color, userId }) => {
     if (!workspaceId) return;
+
+    // Verify membership and fetch role
+    const membership = await WorkspaceMember.findOne({ workspaceId, userId });
+    if (!membership) {
+      console.log(`[socket] Join denied: User ${userId} is not a member of ${workspaceId}`);
+      return;
+    }
+
     socket.join(`workspace:${workspaceId}`);
     socket.data.workspaceId = workspaceId;
+    socket.data.userId = userId;
     socket.data.username = username;
+    socket.data.role = membership.role;
     
-    console.log(`[socket] ${username} joined workspace room: workspace:${workspaceId}`);
+    console.log(`[socket] ${username} (${membership.role}) joined workspace:${workspaceId}`);
     
-    // Notify others in the workspace (presence list only)
-    socket.to(`workspace:${workspaceId}`).emit('user_joined', { id: socket.id, username, color });
+    socket.to(`workspace:${workspaceId}`).emit('user_joined', { 
+      userId: socket.id, 
+      profileId: userId,
+      username, 
+      color,
+      role: membership.role 
+    });
   });
 
   // ── join_file ───────────────────────────────────────────────────────────────
   socket.on('join_file', async ({ fileId }) => {
     if (!fileId) return;
     
-    // Leave previous file rooms if any
     const rooms = Array.from(socket.rooms);
     rooms.forEach(room => {
       if (room.startsWith('file:')) socket.leave(room);
     });
 
     socket.join(`file:${fileId}`);
-    console.log(`[socket] ${socket.data.username} joined file room: file:${fileId}`);
-
-    // Load file content
+    
     try {
       const file = await File.findById(fileId);
       socket.emit('file_joined', {
@@ -88,7 +100,6 @@ io.on('connection', (socket) => {
         code: file?.content || '',
       });
     } catch (err) {
-      console.error('[socket] Failed to load file:', err.message);
       socket.emit('file_joined', { fileId, code: '' });
     }
   });
@@ -97,10 +108,14 @@ io.on('connection', (socket) => {
   socket.on('code_change', ({ fileId, code, userId }) => {
     if (!fileId) return;
 
-    // Broadcast only to clients in this file room
+    // ENFORCE RBAC: Viewers cannot emit changes
+    if (socket.data.role === 'viewer') {
+      console.log(`[socket] Blocked change from viewer: ${socket.data.username}`);
+      return;
+    }
+
     socket.to(`file:${fileId}`).emit('code_update', { fileId, code });
 
-    // Debounce DB write: wait 1.5s
     if (saveTimers[fileId]) clearTimeout(saveTimers[fileId]);
     saveTimers[fileId] = setTimeout(async () => {
       try {
@@ -135,7 +150,6 @@ io.on('connection', (socket) => {
         username: socket.data.username,
       });
     }
-    console.log(`[socket] disconnected: ${socket.id}`);
   });
 });
 
@@ -152,6 +166,5 @@ mongoose
     });
   })
   .catch((err) => {
-    console.error('[db] MongoDB connection failed:', err.message);
     process.exit(1);
   });

@@ -5,9 +5,10 @@ import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { fetchWorkspace } from '../services/workspaceApi';
 import { fetchFileContent } from '../services/fileApi';
-import ShareWorkspaceModal from '../components/ShareWorkspaceModal';
 import FileExplorer from '../components/FileExplorer';
 import VersionHistory from '../components/VersionHistory';
+import MembersPanel from '../components/MembersPanel';
+import InviteModal from '../components/InviteModal';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -26,8 +27,9 @@ const Workspace = () => {
   const [myRole, setMyRole] = useState('viewer');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showShare, setShowShare] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
 
   const socketRef = useRef(null);
@@ -41,10 +43,9 @@ const Workspace = () => {
         const data = await fetchWorkspace(workspaceId);
         setWorkspace(data.workspace);
         setFiles(data.files || []);
-        setMembers(data.members);
+        setMembers(data.members || []);
         setMyRole(data.myRole);
         
-        // Auto-select first file if available
         if (data.files?.length > 0) {
           setActiveFileId(data.files[0]._id);
         }
@@ -89,6 +90,7 @@ const Workspace = () => {
         workspaceId,
         username: user?.username,
         color: colorRef.current,
+        userId: user?.id
       });
       
       if (activeFileId) {
@@ -110,9 +112,9 @@ const Workspace = () => {
       }
     });
 
-    socket.on('user_joined', ({ username }) => {
+    socket.on('user_joined', ({ username, role }) => {
       setConnectedUsers((prev) =>
-        prev.find((u) => u.username === username) ? prev : [...prev, { username }]
+        prev.find((u) => u.username === username) ? prev : [...prev, { username, role }]
       );
     });
 
@@ -150,6 +152,7 @@ const Workspace = () => {
 
   const activeFile = files.find(f => f._id === activeFileId);
   const canEdit = myRole === 'owner' || myRole === 'editor';
+  const isOwner = myRole === 'owner';
 
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
 
@@ -163,7 +166,7 @@ const Workspace = () => {
           <div className="ws-name-badge">
             <span className="ws-topbar-name">{workspace?.name}</span>
             {activeFile && (
-              <span className="active-file-badge">{activeFile.name}</span>
+              <span className="active-file-badge">{activeFile.name || 'main.js'}</span>
             )}
           </div>
         </div>
@@ -171,7 +174,7 @@ const Workspace = () => {
         <div className="ws-topbar-right">
           <div className="presence-row">
             {connectedUsers.map((u) => (
-              <span key={u.username} className="presence-avatar" title={u.username}>
+              <span key={u.username} className={`presence-avatar ${u.role === 'owner' ? 'ring-owner' : ''}`} title={`${u.username} (${u.role})`}>
                 {u.username[0].toUpperCase()}
               </span>
             ))}
@@ -181,15 +184,21 @@ const Workspace = () => {
             {myRole}
           </span>
 
-          <button className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`} onClick={() => setShowHistory(!showHistory)}>
-            ⏳ History
-          </button>
-
-          {myRole === 'owner' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setShowShare(true)}>
-              Share
+          <div className="topbar-actions">
+            <button className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`} onClick={() => { setShowMembers(false); setShowHistory(!showHistory); }}>
+              ⏳ History
             </button>
-          )}
+
+            <button className={`btn btn-ghost btn-sm ${showMembers ? 'active' : ''}`} onClick={() => { setShowHistory(false); setShowMembers(!showMembers); }}>
+              👥 Members
+            </button>
+
+            {isOwner && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
+                Invite
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -204,9 +213,9 @@ const Workspace = () => {
         />
 
         <div className="editor-container">
-          {!canEdit && (
+          {myRole === 'viewer' && (
             <div className="viewer-banner">
-              👁 Read-only access — edits disabled.
+              👁 Read-only access — contact the owner to request edit permissions.
             </div>
           )}
           {!activeFileId ? (
@@ -242,14 +251,23 @@ const Workspace = () => {
             }}
           />
         )}
+
+        {showMembers && (
+          <MembersPanel
+            workspaceId={workspaceId}
+            members={members}
+            myRole={myRole}
+            onMembersChange={setMembers}
+          />
+        )}
       </div>
 
-      {showShare && (
-        <ShareWorkspaceModal
+      {showInvite && (
+        <InviteModal
           workspaceId={workspaceId}
           workspaceName={workspace?.name}
-          members={members}
-          onClose={() => setShowShare(false)}
+          onInviteSuccess={(newMember) => setMembers([...members, newMember])}
+          onClose={() => setShowInvite(false)}
         />
       )}
     </div>

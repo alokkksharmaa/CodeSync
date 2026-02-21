@@ -41,7 +41,7 @@ const FileExplorer = ({ workspaceId, files, activeFileId, onFileSelect, onFilesC
   };
 
   const getLanguageFromExt = (name) => {
-    const ext = name.split('.').pop();
+    const ext = name?.split('.').pop() || '';
     const map = {
       js: 'javascript',
       ts: 'typescript',
@@ -56,7 +56,7 @@ const FileExplorer = ({ workspaceId, files, activeFileId, onFileSelect, onFilesC
   };
 
   const getIcon = (name) => {
-    const ext = name.split('.').pop();
+    const ext = name?.split('.').pop() || '';
     switch (ext) {
       case 'js': return 'JS';
       case 'ts': return 'TS';
@@ -100,7 +100,7 @@ const FileExplorer = ({ workspaceId, files, activeFileId, onFileSelect, onFilesC
             onClick={() => onFileSelect(file._id)}
           >
             <span className="file-icon">{getIcon(file.name)}</span>
-            <span className="file-name">{file.name}</span>
+            <span className="file-name">{file.name || 'main.js'}</span>
             {canEdit && files.length > 1 && (
               <button
                 className="btn-delete-tiny"

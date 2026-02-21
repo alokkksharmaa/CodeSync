@@ -36,7 +36,11 @@ export const getFileContent = async (req, res) => {
     if (!file) {
       return res.status(404).json({ message: 'File not found.' });
     }
-    return res.status(200).json(file);
+
+    const doc = file.toObject();
+    if (!doc.name) doc.name = 'main.js';
+
+    return res.status(200).json(doc);
   } catch (error) {
     console.error('[getFileContent error]', error);
     return res.status(500).json({ message: 'Failed to fetch file content.' });

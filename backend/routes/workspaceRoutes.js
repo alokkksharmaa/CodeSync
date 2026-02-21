@@ -1,28 +1,42 @@
 import express from 'express';
 import authMiddleware from '../middleware/authMiddleware.js';
-import { verifyMembership } from '../middleware/workspaceAuth.js';
+import { isOwner, isEditor, roles } from '../middleware/permissionMiddleware.js';
 import {
   createWorkspace,
   getWorkspaces,
   getWorkspace,
-  shareWorkspace,
+  deleteWorkspace,
+  updateWorkspaceSettings,
 } from '../controllers/workspaceController.js';
+import {
+  inviteMember,
+  updateMemberRole,
+  removeMember
+} from '../controllers/memberController.js';
+import { transferOwnership } from '../controllers/ownershipController.js';
 
 const router = express.Router();
 
-// All workspace routes require authentication
 router.use(authMiddleware);
 
-// POST /api/workspaces — create a new workspace
+// ─── Workspace CRUD ───────────────────────────────────────────────────────────
 router.post('/', createWorkspace);
-
-// GET /api/workspaces — list all workspaces for the logged-in user
 router.get('/', getWorkspaces);
+router.get('/:id', isEditor, getWorkspace); 
+router.delete('/:id', isOwner, deleteWorkspace);
+router.patch('/:id/settings', isOwner, updateWorkspaceSettings);
 
-// GET /api/workspaces/:id — get workspace details + file list
-router.get('/:id', verifyMembership, getWorkspace);
+// ─── Member & Role Management ────────────────────────────────────────────────
+// Invite user
+router.post('/:id/invite', isOwner, inviteMember);
 
-// POST /api/workspaces/:id/share — share with another user (owner only)
-router.post('/:id/share', verifyMembership, shareWorkspace);
+// Update member role
+router.patch('/:id/role', isOwner, updateMemberRole);
+
+// Remove member
+router.delete('/:id/member/:userId', isOwner, removeMember);
+
+// Transfer ownership
+router.post('/:id/transfer', isOwner, transferOwnership);
 
 export default router;

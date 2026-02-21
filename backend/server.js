@@ -7,12 +7,14 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const authRoutes = require('./routes/authRoutes');
+const workspaceRoutes = require('./routes/workspaceRoutes');
 const authMiddleware = require('./middleware/authMiddleware');
+const File = require('./models/File');
 
 const app = express();
 const server = http.createServer(app);
 
-// ─── CORS ────────────────────────────────────────────────────────────────────
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -27,92 +29,112 @@ app.use(
   })
 );
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+// ─── HTTP Middleware ───────────────────────────────────────────────────────────
 app.use(express.json());
 
-// ─── Health Check ────────────────────────────────────────────────────────────
+// ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── Auth Routes ─────────────────────────────────────────────────────────────
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/workspaces', workspaceRoutes);
 
-// ─── Protected Route Example ──────────────────────────────────────────────────
-// GET /api/me  — returns the authenticated user's info
+// GET /api/me — protected example
 app.get('/api/me', authMiddleware, (req, res) => {
-  res.json({
-    message: 'Authenticated!',
-    user: req.user, // { id, username } attached by authMiddleware
-  });
+  res.json({ message: 'Authenticated!', user: req.user });
 });
 
-// ─── Socket.IO ───────────────────────────────────────────────────────────────
-// In-memory room state (existing functionality preserved)
-const rooms = {};
+// ─── Socket.IO ────────────────────────────────────────────────────────────────
+// Debounce timers keyed by workspaceId for DB persistence
+const saveTimers = {};
 
 io.on('connection', (socket) => {
   console.log(`[socket] connected: ${socket.id}`);
 
-  socket.on('join_room', ({ roomId, username, color }) => {
-    socket.join(roomId);
+  // ── join_workspace ──────────────────────────────────────────────────────────
+  // Payload: { workspaceId, username, color }
+  socket.on('join_workspace', async ({ workspaceId, username, color }) => {
+    if (!workspaceId) return;
 
-    if (!rooms[roomId]) {
-      rooms[roomId] = { code: '', users: [] };
-    }
-
-    const user = { id: socket.id, username, color };
-    rooms[roomId].users.push(user);
-
-    // Confirm join to the connecting client
-    socket.emit('room_joined', {
-      code: rooms[roomId].code,
-      users: rooms[roomId].users.filter((u) => u.id !== socket.id),
-    });
-
-    // Notify others
-    socket.to(roomId).emit('user_joined', user);
-
-    socket.data.roomId = roomId;
+    socket.join(workspaceId);
+    socket.data.workspaceId = workspaceId;
     socket.data.username = username;
 
-    console.log(`[socket] ${username} joined room ${roomId}`);
-  });
+    console.log(`[socket] ${username} joined workspace ${workspaceId}`);
 
-  socket.on('code_change', ({ roomId, code }) => {
-    if (rooms[roomId]) {
-      rooms[roomId].code = code;
+    // Load saved file content from MongoDB for the joining client
+    try {
+      const file = await File.findOne({ workspaceId });
+      socket.emit('workspace_joined', {
+        code: file?.content || '',
+      });
+    } catch (err) {
+      console.error('[socket] Failed to load workspace file:', err.message);
+      socket.emit('workspace_joined', { code: '' });
     }
-    socket.to(roomId).emit('code_update', { code });
+
+    // Notify others in the workspace
+    socket.to(workspaceId).emit('user_joined', { id: socket.id, username, color });
   });
 
-  socket.on('cursor_position', ({ roomId, position, username, color }) => {
-    socket.to(roomId).emit('cursor_update', { userId: socket.id, position, username, color });
+  // ── code_change ─────────────────────────────────────────────────────────────
+  // Payload: { workspaceId, code, userId }
+  socket.on('code_change', ({ workspaceId, code, userId }) => {
+    if (!workspaceId) return;
+
+    // Broadcast to all other clients in the workspace immediately
+    socket.to(workspaceId).emit('code_update', { code });
+
+    // Debounce DB write: wait 1.5s of inactivity before persisting
+    if (saveTimers[workspaceId]) clearTimeout(saveTimers[workspaceId]);
+    saveTimers[workspaceId] = setTimeout(async () => {
+      try {
+        await File.findOneAndUpdate(
+          { workspaceId },
+          { content: code, lastEditedBy: userId || null },
+          { new: true, upsert: true }
+        );
+        delete saveTimers[workspaceId];
+      } catch (err) {
+        console.error('[socket] Failed to persist code:', err.message);
+      }
+    }, 1500);
   });
 
-  socket.on('leave_room', ({ roomId }) => {
-    handleLeave(socket, roomId);
+  // ── cursor_position (unchanged from Phase 1) ────────────────────────────────
+  socket.on('cursor_position', ({ workspaceId, position, username, color }) => {
+    socket.to(workspaceId).emit('cursor_update', {
+      userId: socket.id,
+      position,
+      username,
+      color,
+    });
   });
 
+  // ── leave_workspace ─────────────────────────────────────────────────────────
+  socket.on('leave_workspace', ({ workspaceId }) => {
+    handleLeave(socket, workspaceId);
+  });
+
+  // ── disconnect ──────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
-    const roomId = socket.data.roomId;
-    if (roomId) handleLeave(socket, roomId);
+    const workspaceId = socket.data.workspaceId;
+    if (workspaceId) handleLeave(socket, workspaceId);
     console.log(`[socket] disconnected: ${socket.id}`);
   });
 });
 
-function handleLeave(socket, roomId) {
-  socket.leave(roomId);
-  if (rooms[roomId]) {
-    rooms[roomId].users = rooms[roomId].users.filter((u) => u.id !== socket.id);
-    if (rooms[roomId].users.length === 0) {
-      delete rooms[roomId];
-    }
-  }
-  socket.to(roomId).emit('user_left', { userId: socket.id, username: socket.data.username });
+function handleLeave(socket, workspaceId) {
+  socket.leave(workspaceId);
+  socket.to(workspaceId).emit('user_left', {
+    userId: socket.id,
+    username: socket.data.username,
+  });
 }
 
-// ─── MongoDB + Server Start ───────────────────────────────────────────────────
+// ─── MongoDB + Server Start ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/codesync';
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import authMiddleware from '../middleware/authMiddleware.js';
-import { isOwner, isEditor, roles } from '../middleware/permissionMiddleware.js';
+import { isOwner, isEditor, requireRole, roles } from '../middleware/permissionMiddleware.js';
 import {
   createWorkspace,
   getWorkspaces,

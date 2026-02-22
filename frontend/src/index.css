@@ -1484,3 +1484,55 @@ body {
     width: 100%;
   }
 }
+
+.btn-error {
+  color: var(--error) !important;
+  border-color: var(--error) !important;
+}
+
+.btn-error:hover {
+  background: rgba(248, 113, 113, 0.1) !important;
+}
+
+/* ─── Activity Feed Panel ──────────────────────────────────── */
+.activity-feed-panel {
+  width: 280px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.2s ease both;
+  flex-shrink: 0;
+}
+
+.activity-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.activity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bg-elevated);
+}
+
+.activity-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.activity-content {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.activity-content strong {
+  color: var(--text-primary);
+}

@@ -4,11 +4,13 @@ import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { fetchWorkspace } from '../services/workspaceApi';
+import api from '../services/api'; // Added for leaveSession
 import { fetchFileContent } from '../services/fileApi';
 import FileExplorer from '../components/FileExplorer';
 import VersionHistory from '../components/VersionHistory';
 import MembersPanel from '../components/MembersPanel';
 import InviteModal from '../components/InviteModal';
+import ActivityFeed from '../components/ActivityFeed';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -30,6 +32,7 @@ const Workspace = () => {
   const [showInvite, setShowInvite] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
 
   const socketRef = useRef(null);
@@ -112,6 +115,19 @@ const Workspace = () => {
       }
     });
 
+    socket.on('file_created', (newFile) => {
+      setFiles(prev => prev.find(f => f._id === newFile._id) ? prev : [...prev, newFile]);
+    });
+
+    socket.on('file_deleted', ({ fileId }) => {
+      setFiles(prev => prev.filter(f => f._id !== fileId));
+      if (activeFileId === fileId) setActiveFileId(null);
+    });
+
+    socket.on('file_renamed', (updatedFile) => {
+      setFiles(prev => prev.map(f => f._id === updatedFile._id ? updatedFile : f));
+    });
+
     socket.on('user_joined', ({ username, role }) => {
       setConnectedUsers((prev) =>
         prev.find((u) => u.username === username) ? prev : [...prev, { username, role }]
@@ -123,16 +139,13 @@ const Workspace = () => {
     });
 
     socket.on('member_updated', ({ userId, role }) => {
-      // Update members list
       setMembers(prev => prev.map(m => 
         m.user._id === userId ? { ...m, role } : m
       ));
 
-      // If IT'S ME, update myRole and handle UI changes
       if (userId === user?.id) {
         setMyRole(role);
         toast(`Your role has been updated to ${role}`, { icon: '🔐' });
-        // Update socket data for server-side enforcement
         socket.emit('role_sync', { role });
       }
     });
@@ -149,7 +162,7 @@ const Workspace = () => {
     return () => {
       socket.disconnect();
     };
-  }, [loading, workspace, workspaceId, user]);
+  }, [loading, workspace, workspaceId, user, activeFileId]);
 
   const handleCodeChange = useCallback(
     (e) => {
@@ -174,6 +187,19 @@ const Workspace = () => {
     [activeFileId, myRole, user]
   );
 
+  const handleLeaveSession = async () => {
+    if (!window.confirm('Are you sure you want to leave this session?')) return;
+    
+    try {
+      await api.delete(`/api/workspaces/${workspaceId}/session`);
+      toast.success('Left workspace session');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error('Failed to leave session');
+      navigate('/dashboard');
+    }
+  };
+
   const activeFile = files.find(f => f._id === activeFileId);
   const canEdit = myRole === 'owner' || myRole === 'editor';
   const isOwner = myRole === 'owner';
@@ -197,8 +223,8 @@ const Workspace = () => {
 
         <div className="ws-topbar-right">
           <div className="presence-row">
-            {connectedUsers.map((u) => (
-              <span key={u.username} className={`presence-avatar ${u.role === 'owner' ? 'ring-owner' : ''}`} title={`${u.username} (${u.role})`}>
+            {connectedUsers.map((u, i) => (
+              <span key={i} className={`presence-avatar ${u.role === 'owner' ? 'ring-owner' : ''}`} title={`${u.username} (${u.role})`}>
                 {u.username[0].toUpperCase()}
               </span>
             ))}
@@ -209,11 +235,15 @@ const Workspace = () => {
           </span>
 
           <div className="topbar-actions">
-            <button className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`} onClick={() => { setShowMembers(false); setShowHistory(!showHistory); }}>
+            <button className={`btn btn-ghost btn-sm ${showActivity ? 'active' : ''}`} onClick={() => { setShowMembers(false); setShowHistory(false); setShowActivity(!showActivity); }}>
+              🔔 Activity
+            </button>
+
+            <button className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`} onClick={() => { setShowMembers(false); setShowActivity(false); setShowHistory(!showHistory); }}>
               ⏳ History
             </button>
 
-            <button className={`btn btn-ghost btn-sm ${showMembers ? 'active' : ''}`} onClick={() => { setShowHistory(false); setShowMembers(!showMembers); }}>
+            <button className={`btn btn-ghost btn-sm ${showMembers ? 'active' : ''}`} onClick={() => { setShowHistory(false); setShowActivity(false); setShowMembers(!showMembers); }}>
               👥 Members
             </button>
 
@@ -222,6 +252,10 @@ const Workspace = () => {
                 Invite
               </button>
             )}
+
+            <button className="btn btn-ghost btn-sm btn-error" onClick={handleLeaveSession} title="Leave Session">
+              Leave
+            </button>
           </div>
         </div>
       </header>
@@ -229,6 +263,7 @@ const Workspace = () => {
       <div className="workspace-layout">
         <FileExplorer
           workspaceId={workspaceId}
+          socket={socketRef.current}
           files={files}
           activeFileId={activeFileId}
           onFileSelect={setActiveFileId}
@@ -284,6 +319,13 @@ const Workspace = () => {
             onMembersChange={setMembers}
           />
         )}
+
+        {showActivity && (
+          <ActivityFeed
+            socket={socketRef.current}
+            workspaceId={workspaceId}
+          />
+        )}
       </div>
 
       {showInvite && (
@@ -299,3 +341,4 @@ const Workspace = () => {
 };
 
 export default Workspace;
+

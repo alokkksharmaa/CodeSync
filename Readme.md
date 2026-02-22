@@ -1,161 +1,123 @@
-# CodeSync - Real-time Collaborative Coding App
+# ⚡ CodeSync - Real-time Collaborative Coding Platform
 
-A minimal full-stack application for real-time collaborative code editing in shared rooms.
+CodeSync is a powerful, full-stack collaborative IDE designed for seamless real-time teamwork. Build, share, and collaborate on code with instant synchronization, live activity monitoring, and robust workspace governance.
 
-## Tech Stack
+![CodeSync Hero](https://img.shields.io/badge/Status-Version%202.0-blueviolet?style=for-the-badge)
+![CodeSync Tech](https://img.shields.io/badge/Stack-MERN%20+%20Socket.IO-green?style=for-the-badge)
 
-- **Frontend**: React (Vite), Monaco Editor
-- **Backend**: Node.js + Express
-- **Real-time**: Socket.IO
+## 🚀 Key Features
 
-## Project Structure
+### 💻 Real-time Collaboration
+- **Synchronized Editing**: Powered by Monaco Editor with live code updates across all clients.
+- **Presence Tracking**: Dynamic user icons showing who is active in the workspace.
+- **Live Cursors**: Colored cursor indicators for every collaborator with name badges.
+- **Role-Based Access**: Granular permissions (Owner, Editor, Viewer) enforced via Socket.IO.
 
-```
+### 📊 Collaboration Intelligence (New!)
+- **Activity Feed**: Real-time sidebar notification feed for user joins, leaves, and file operations.
+- **Activity Logging**: Persistent backend logging of all workspace activities for accountability.
+- **Recent Activity Dashboard**: Overview of workspace activities directly from the dashboard.
+
+### 📁 Advanced File Management
+- **Real-time File Sync**: Instant synchronization of file creation, deletion, and renaming across all collaborators.
+- **Version History**: Save and restore code snapshots to prevent data loss.
+- **Multi-file Support**: Seamlessly switch between multiple files in a single workspace.
+
+### 🛡️ Workspace Governance
+- **Session Management**: Explicit "Leave Session" control with automatic cleanup and notifications.
+- **Invitations**: Secure invited-only access to private workspaces.
+- **Ownership Transfer**: (Coming soon) Ability to transfer workspace ownership.
+
+### ✨ Premium UX/UI
+- **Smart Auth**: Auto-focusing inputs and secure password toggle for a frictionless logic experience.
+- **Responsive Design**: Fully optimized for desktop and mobile collaborative viewing.
+- **Performance Optimized**: Debounced code updates and throttled cursor tracking for high performance.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18, Vite, Monaco Editor, Tailwind-inspired CSS3.
+- **Backend**: Node.js, Express, MongoDB (Mongoose).
+- **Real-time**: Socket.IO 4.x.
+- **Auth**: JWT-based secure authentication.
+
+---
+
+## 📂 Project Structure
+
+```bash
 ├── backend/
-│   ├── server.js              # Express + Socket.IO server setup
-│   ├── handlers/
-│   │   └── socketHandler.js   # Socket event handlers
-│   ├── services/
-│   │   └── roomManager.js     # In-memory room state management
+│   ├── controllers/      # Business logic (Files, Sessions, Workspaces)
+│   ├── models/           # Mongoose schemas (ActivityLog, Workspace, User)
+│   ├── routes/           # REST API Endpoints
+│   ├── server.js         # Socket.IO & Express entry point
 │   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── JoinRoom.jsx      # Room join screen
-│   │   │   ├── EditorRoom.jsx    # Main editor container
-│   │   │   ├── MonacoEditor.jsx  # Monaco editor wrapper
-│   │   │   └── CodeEditor.jsx    # Legacy text editor
-│   │   ├── services/
-│   │   │   └── socket.js         # Socket.IO client setup
-│   │   ├── styles/
-│   │   │   └── index.css         # Global styles
-│   │   ├── App.jsx               # Root component
-│   │   └── main.jsx              # Entry point
-│   ├── index.html
-│   ├── vite.config.js
+│   │   ├── components/   # UI Modules (ActivityFeed, FileExplorer, etc.)
+│   │   ├── pages/        # Route Views (Dashboard, Workspace, Auth)
+│   │   ├── services/     # API & Socket clients
+│   │   └── context/      # Auth & State Management
 │   └── package.json
 ```
 
-## Features
+---
 
-- Room-based collaboration
-- Real-time code synchronization with Monaco Editor
-- Live cursor presence with colored indicators
-- Random username generation for each user
-- Professional code editor with syntax highlighting
-- IntelliSense and autocomplete
-- Cursor position preservation during remote updates
-- Throttled cursor updates (100ms) for smooth performance
-- Debounced code updates (300ms) to optimize network traffic
-- User presence tracking
-- Clean, modular architecture
+## 🚀 Quick Start
 
-## Quick Start (Local Development)
+### 1. Prerequisites
+- Node.js (v16+)
+- MongoDB (Local or Atlas)
 
-### Backend
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-Server runs on `http://localhost:3000`
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App runs on `http://localhost:5173`
-
-## Deployment
-
-**🚀 Ready to deploy?** Start here: [START_HERE.md](START_HERE.md)
-
-**Quick guides:**
-- [QUICK_DEPLOY.md](QUICK_DEPLOY.md) - Fast deployment (10 min)
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Complete guide (30 min)
-- [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) - Automated deployment (15 min)
-
-**TL;DR:**
-1. Deploy backend to Render/Railway
-2. Update `frontend/.env.production` with backend URL
-3. Build frontend and push to GitHub
-4. Enable GitHub Pages
-
-## Environment Setup
-
-### Backend (.env)
-```bash
-PORT=3000
+### 2. Environment Configuration
+Create a `.env` file in the **backend** directory:
+```env
+PORT=3001
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
 FRONTEND_URL=http://localhost:5173
 ```
 
-### Frontend (.env.development)
+### 3. Installation & Run
 ```bash
-VITE_BACKEND_URL=http://localhost:3000
-```
-
-### Frontend (.env.production)
-```bash
-VITE_BACKEND_URL=https://your-backend-url.onrender.com
-```
-
-## Setup & Installation
-
-### Backend
-
-```bash
+# Setup Backend
 cd backend
 npm install
 npm run dev
-```
 
-Server runs on `http://localhost:3000`
-
-### Frontend
-
-```bash
-cd frontend
+# Setup Frontend
+cd ../frontend
 npm install
 npm run dev
 ```
 
-App runs on `http://localhost:5173`
+The application will be available at `http://localhost:5173`.
 
-## Usage
+---
 
-1. Open the app in your browser
-2. Enter a room ID (e.g., "room123")
-3. Share the room ID with collaborators
-4. Start coding together in real-time!
+## 🔄 Socket.IO API Summary
 
-## Socket Events
+| Event | Type | Payload | Description |
+| :--- | :--- | :--- | :--- |
+| `join_workspace` | Emit | `{ workspaceId, username, color, userId }` | Joins a collaborative room. |
+| `code_change` | Emit | `{ fileId, code, userId }` | Broadcasts code changes to others. |
+| `user_joined` | Listen | `{ username, role, color }` | Notification when a peer joins. |
+| `activity_update` | Listen | `{ type, user, meta }` | Triggers activity feed refresh. |
+| `file_created` | Listen | `{ fileObject }` | Syncs new file creation across clients. |
 
-### Client → Server
-- `join_room` - Join a collaborative room (includes username, color)
-- `leave_room` - Leave current room
-- `code_change` - Send code updates
-- `cursor_position` - Send cursor position updates
+---
 
-### Server → Client
-- `room_joined` - Confirmation with initial content and existing users
-- `code_update` - Receive code changes from others
-- `user_joined` - New user joined notification (includes username, color, cursor)
-- `user_left` - User left notification
-- `cursor_update` - Receive cursor position updates from others
+## 📝 Recent Enhancements (Session Summary)
 
-## Notes
+- ✅ **UX Overhaul**: Implemented auto-focus and password toggle on Auth pages.
+- ✅ **Dashboard Update**: Added workspace grid with "Quick Join" and Activity Summary.
+- ✅ **Activity Feed**: New frontend component and backend logging system for collaboration tracking.
+- ✅ **Session Exit**: Implemented `leaveSession` logic and UI button for controlled exits.
+- ✅ **Real-time File Sync**: Integrated socket events into file operations for instant project-wide updates.
 
-This is a minimal blueprint focused on core functionality. Not included:
-- Authentication
-- Database persistence
-- Code execution
-- Conflict resolution
+---
 
-See `frontend/CURSOR_PRESENCE.md` for details on cursor tracking implementation.
+## 📄 License
+This project is licensed under the MIT License.

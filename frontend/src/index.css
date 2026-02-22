@@ -1201,6 +1201,104 @@ body {
   outline: none;
 }
 
+/* ─── Folder Tree ────────────────────────────────────────────── */
+.explorer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.explorer-folder {
+  padding: 5px 8px 5px 4px !important;
+  font-weight: 500;
+}
+
+.folder-arrow {
+  font-size: 10px;
+  color: var(--text-muted);
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.folder-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tree-folder {
+  user-select: none;
+}
+
+.tree-children {
+  border-left: 1px solid var(--border);
+  margin-left: 14px;
+}
+
+.item-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.explorer-item:hover .item-actions,
+.explorer-folder:hover .item-actions {
+  display: flex;
+}
+
+.btn-icon-tiny {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  transition: color var(--transition), background var(--transition);
+}
+
+.btn-icon-tiny:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.btn-icon-tiny.btn-delete-tiny {
+  position: static;
+  opacity: 1;
+}
+
+.btn-icon-tiny.btn-delete-tiny:hover {
+  color: var(--error);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.explorer-inline-form {
+  padding: 4px 8px;
+}
+
+.explorer-inline-input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  font-family: inherit;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.explorer-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 16px;
+  text-align: center;
+  line-height: 1.5;
+}
+
 /* ─── Version History ────────────────────────────────────────── */
 .version-history {
   width: 260px;

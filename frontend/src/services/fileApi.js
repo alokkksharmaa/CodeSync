@@ -1,7 +1,12 @@
 import api from './api';
 
 export const createFile = async (data) => {
-  const res = await api.post('/api/files', data);
+  const res = await api.post('/api/files', { ...data, type: 'file' });
+  return res.data;
+};
+
+export const createFolder = async (data) => {
+  const res = await api.post('/api/files', { ...data, type: 'folder' });
   return res.data;
 };
 

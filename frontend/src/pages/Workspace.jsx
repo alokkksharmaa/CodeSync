@@ -125,9 +125,14 @@ const Workspace = () => {
       setFiles(prev => prev.find(f => f._id === newFile._id) ? prev : [...prev, newFile]);
     });
 
-    socket.on('file_deleted', ({ fileId }) => {
-      setFiles(prev => prev.filter(f => f._id !== fileId));
-      if (activeFileId === fileId) setActiveFileId(null);
+    socket.on('folder_created', (newFolder) => {
+      setFiles(prev => prev.find(f => f._id === newFolder._id) ? prev : [...prev, newFolder]);
+    });
+
+    socket.on('file_deleted', ({ fileId, deletedIds }) => {
+      const idsToRemove = deletedIds || [fileId];
+      setFiles(prev => prev.filter(f => !idsToRemove.includes(String(f._id))));
+      if (idsToRemove.includes(String(activeFileId))) setActiveFileId(null);
     });
 
     socket.on('file_renamed', (updatedFile) => {

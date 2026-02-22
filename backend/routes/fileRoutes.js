@@ -19,18 +19,20 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-// File management (requires Editor or Owner role in the workspace)
-// POST uses workspaceId in body
-router.post('/', requireRole('editor'), createFile); 
+// Create file OR folder (type='file'|'folder' in body)
+// Both owners and editors can create files/folders
+router.post('/', requireRole('editor'), createFile);
 
-// Open file (Anyone in workspace can read)
+// Open file content (anyone in workspace can read)
 router.get('/open/:id', verifyFileAccess, getFileContent);
 
 // Update file content (Editor+)
 router.put('/:id', verifyFileAccess, checkRole('editor'), updateFile);
 
-// Rename/Delete (Editor+)
+// Rename file/folder (Editor+)
 router.patch('/rename/:id', verifyFileAccess, checkRole('editor'), renameFile);
+
+// Delete file/folder - also recursively deletes folder children (Editor+)
 router.delete('/:id', verifyFileAccess, checkRole('editor'), deleteFile);
 
 // Version history

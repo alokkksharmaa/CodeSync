@@ -17,6 +17,8 @@ const activityLogSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: [
+        'USER_JOINED',
+        'USER_LEFT',
         'USER_INVITED',
         'ROLE_CHANGED',
         'MEMBER_REMOVED',

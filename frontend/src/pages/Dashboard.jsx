@@ -7,39 +7,40 @@ import api from '../services/api'
 import { io } from 'socket.io-client'
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 const LANG_COLORS = {
-  javascript: '#f7df1e',
-  typescript: '#3178c6',
-  python: '#3572a5',
-  java: '#b07219',
-  cpp: '#f34b7d',
-  go: '#00add8',
-  rust: '#dea584',
-  html: '#e34c26',
-  css: '#563d7c',
-  json: '#8bc4d6',
+  javascript: '#f7df1e', typescript: '#3178c6', python: '#3572a5',
+  java: '#b07219', cpp: '#f34b7d', go: '#00add8', rust: '#dea584',
 }
 
-const WorkspaceCard = ({ workspace, role, onClick }) => {
-  const updatedAt = new Date(workspace.updatedAt).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  })
+const TIME_AGO = (date) => {
+  const diff = Math.floor((Date.now() - new Date(date)) / 1000)
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
-  const handlePrefetch = () => {
-    // Prefetch workspace data on hover to speed up navigation
-    fetchWorkspace(workspace._id).catch(() => {});
-  }
+// ─── Workspace Card ───────────────────────────────────────────────────────────
+const WorkspaceCard = ({ workspace, role, onClick }) => {
+  const langColor = LANG_COLORS[workspace.language] || '#635bff'
+
+  const handlePrefetch = () => fetchWorkspace(workspace._id).catch(() => {})
 
   return (
-    <div className="ws-card" onMouseEnter={handlePrefetch}>
+    <div className="ws-card" onMouseEnter={handlePrefetch} onClick={onClick}>
       <div className="ws-card-top">
         <span
           className="language-badge"
-          style={{ background: LANG_COLORS[workspace.language] + '22', color: LANG_COLORS[workspace.language] }}
+          style={{
+            background: langColor + '1a',
+            color: langColor,
+            border: `1px solid ${langColor}30`,
+          }}
         >
-          {workspace.language}
+          {workspace.language || 'js'}
         </span>
         <span className={`role-badge ${role === 'owner' ? 'badge-owner' : role === 'editor' ? 'badge-editor' : 'badge-viewer'}`}>
           {role}
@@ -48,96 +49,124 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
       <h3 className="ws-card-name" title={workspace.name}>{workspace.name}</h3>
       <p className="ws-card-meta">
         {role !== 'owner' && workspace.owner?.username
-          ? `by @${workspace.owner.username} · `
-          : ''}
-        Updated {updatedAt}
+          ? `@${workspace.owner.username} · ` : ''}
+        {TIME_AGO(workspace.updatedAt)}
       </p>
-      <div className="ws-card-footer">
-        <button className="btn btn-primary btn-sm btn-full" onClick={onClick}>
-          Quick Join →
-        </button>
-      </div>
     </div>
   )
 }
 
+// ─── Recent Activity ─────────────────────────────────────────────────────────
 const RecentActivity = ({ workspaces, refreshTrigger }) => {
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
 
   const fetchActivities = useCallback(async () => {
-    // Fetch unique workspace IDs from memberships
     const wsIds = workspaces.map(w => w.workspace._id)
-    if (wsIds.length === 0) {
-      setLoading(false)
-      return
-    }
-
+    if (wsIds.length === 0) { setLoading(false); return }
     try {
-      // In this version, we fetch global activities relevant to user's workspaces
-      // or we can aggregate from individual /api/workspaces/:id/activity
-      // For simplicity & performance, we'll fetch from a combined endpoint or mock aggregator
-      const allActivities = await Promise.all(
-        wsIds.slice(0, 5).map(id => api.get(`/api/workspaces/${id}/activity`).then(res => res.data))
+      const all = await Promise.all(
+        wsIds.slice(0, 5).map(id => api.get(`/api/workspaces/${id}/activity`).then(r => r.data))
       )
-      const combined = allActivities.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10)
+      const combined = all.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 12)
       setActivities(combined)
-    } catch (err) {
-      console.error('Failed to fetch dashboard activity', err)
-    } finally {
-      setLoading(false)
-    }
+    } catch { /* silent */ } finally { setLoading(false) }
   }, [workspaces])
 
-  useEffect(() => {
-    fetchActivities()
-  }, [fetchActivities, refreshTrigger])
+  useEffect(() => { fetchActivities() }, [fetchActivities, refreshTrigger])
 
-  const formatTime = (date) => {
-    const now = new Date()
-    const diff = Math.floor((now - new Date(date)) / 1000)
-    if (diff < 60) return 'just now'
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-    return new Date(date).toLocaleDateString()
+  const ACTION_LABEL = {
+    FILE_UPDATED: 'edited',
+    FILE_CREATED: 'created',
+    FILE_DELETED: 'deleted',
+    FILE_RENAMED: 'renamed',
+    FOLDER_CREATED: 'created folder',
+    USER_JOINED: 'joined',
+    USER_LEFT: 'left',
   }
 
-  if (loading) return (
-    <section className="ws-section">
-      <h2 className="ws-section-title">Recent Activity</h2>
-      <div className="activity-skeleton">
-        {[1, 2, 3].map(i => <div key={i} className="skeleton skeleton-activity" />)}
-      </div>
-    </section>
-  )
-
   return (
-    <section className="ws-section">
-      <h2 className="ws-section-title">Recent Activity</h2>
+    <div className="activity-panel">
+      <div className="activity-panel-header">Recent Activity</div>
       <div className="activity-list-mini">
-        {activities.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: '12px 16px' }}>
+            {[1, 2, 3, 4].map(i => <div key={i} className="skeleton skeleton-activity" />)}
+          </div>
+        ) : activities.length === 0 ? (
           <p className="no-activity-mini">No recent activity</p>
         ) : (
           activities.map(act => (
             <div key={act._id} className="activity-item-mini">
-              <span className="activity-dot"></span>
+              <span className="activity-dot" />
               <span className="activity-text">
-                <strong>{act.metadata?.username || 'User'}</strong> {
-                  act.actionType === 'FILE_UPDATED' ? 'edited a file' : 
-                  act.actionType === 'USER_JOINED' ? 'joined workspace' : 
-                  act.actionType === 'FILE_CREATED' ? 'created a file' : 
-                  act.actionType === 'USER_LEFT' ? 'left workspace' : 'performed an action'
-                }
+                <strong>{act.metadata?.username || 'User'}</strong>{' '}
+                {ACTION_LABEL[act.actionType] || 'acted'}
+                {act.metadata?.name ? ` ${act.metadata.name}` : ''}
               </span>
-              <span className="activity-time">{formatTime(act.createdAt)}</span>
+              <span className="activity-time">{TIME_AGO(act.createdAt)}</span>
             </div>
           ))
         )}
       </div>
-    </section>
+    </div>
   )
 }
 
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+const Sidebar = ({ user, workspaceCount, activeTab, onTabChange, onLogout, onRefresh }) => (
+  <aside className="sidebar">
+    <div className="sidebar-logo" onClick={onRefresh} title="Refresh workspaces">
+      <span className="logo-icon">⚡</span>
+      <span className="logo-text">CodeSync</span>
+    </div>
+
+    <nav className="sidebar-nav">
+      <span className="sidebar-section-label">Navigation</span>
+
+      <div
+        className={`sidebar-item ${activeTab === 'my' ? 'active' : ''}`}
+        onClick={() => onTabChange('my')}
+      >
+        <span className="sidebar-item-icon">⊞</span>
+        My Workspaces
+        {workspaceCount.my > 0 && (
+          <span className="sidebar-item-count">{workspaceCount.my}</span>
+        )}
+      </div>
+
+      <div
+        className={`sidebar-item ${activeTab === 'shared' ? 'active' : ''}`}
+        onClick={() => onTabChange('shared')}
+      >
+        <span className="sidebar-item-icon">👥</span>
+        Shared With Me
+        {workspaceCount.shared > 0 && (
+          <span className="sidebar-item-count">{workspaceCount.shared}</span>
+        )}
+      </div>
+    </nav>
+
+    <div className="sidebar-footer">
+      <div className="sidebar-user">
+        <div className="sidebar-avatar">{user?.username?.[0]?.toUpperCase()}</div>
+        <div className="sidebar-user-info">
+          <div className="sidebar-username">@{user?.username}</div>
+          <div className="sidebar-user-role">{user?.email}</div>
+        </div>
+      </div>
+      <button
+        className="btn btn-ghost btn-sm"
+        style={{ width: '100%', marginTop: '8px', justifyContent: 'flex-start' }}
+        onClick={onLogout}
+      >
+        Sign out
+      </button>
+    </div>
+  </aside>
+)
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -145,155 +174,118 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [refreshActivity, setRefreshActivity] = useState(0)
+  const [activeTab, setActiveTab] = useState('my')
 
   const loadWorkspaces = useCallback(async () => {
     setLoading(true)
     try {
       const data = await fetchWorkspaces()
       setWorkspaces(data)
-    } catch (err) {
+    } catch {
       toast.error('Failed to load workspaces.')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => {
-    loadWorkspaces()
-  }, [loadWorkspaces])
+  useEffect(() => { loadWorkspaces() }, [loadWorkspaces])
 
+  // Socket: listen for activity updates across all workspaces
   useEffect(() => {
-    if (workspaces.length === 0) return;
-
-    // Join a global user room to receive activity updates for all their workspaces
-    const socket = io(BACKEND_URL, { transports: ['websocket'] });
-    
+    if (workspaces.length === 0) return
+    const socket = io(BACKEND_URL, { transports: ['websocket'] })
     socket.on('connect', () => {
-      // Join rooms for all current workspaces to receive activity_update
       workspaces.forEach(({ workspace }) => {
-        socket.emit('join_workspace', { 
-          workspaceId: workspace._id, 
-          username: user?.username, 
-          userId: user?.id 
-        });
-      });
-    });
+        socket.emit('join_workspace', { workspaceId: workspace._id, username: user?.username, userId: user?.id })
+      })
+    })
+    socket.on('activity_update', () => setRefreshActivity(prev => prev + 1))
+    return () => socket.disconnect()
+  }, [workspaces, user])
 
-    socket.on('activity_update', () => {
-      setRefreshActivity(prev => prev + 1);
-    });
-
-    return () => socket.disconnect();
-  }, [workspaces, user]);
-
-  const handleLogout = () => {
-    logout()
-    toast.success('Logged out successfully.')
-    navigate('/login')
-  }
-
+  const handleLogout = () => { logout(); toast.success('Logged out'); navigate('/login') }
   const handleCreated = (data) => {
-    setWorkspaces((prev) => [
-      { workspace: data.workspace, role: 'owner', addedAt: new Date() },
-      ...prev,
-    ])
+    setWorkspaces(prev => [{ workspace: data.workspace, role: 'owner', addedAt: new Date() }, ...prev])
   }
 
-  const myWorkspaces = workspaces.filter((w) => w.role === 'owner')
-  const sharedWorkspaces = workspaces.filter((w) => w.role !== 'owner')
+  const myWorkspaces = workspaces.filter(w => w.role === 'owner')
+  const sharedWorkspaces = workspaces.filter(w => w.role !== 'owner')
+  const shown = activeTab === 'my' ? myWorkspaces : sharedWorkspaces
 
   return (
     <div className="dashboard-page">
-      {/* ── Nav ─────────────────────────────────────────────────── */}
-      <header className="dashboard-nav">
-        <div className="nav-brand" onClick={loadWorkspaces} style={{ cursor: 'pointer' }} title="Click to refresh workspaces">
-          <span className="logo-icon">⚡</span>
-          <span className="logo-text">CodeSync</span>
-        </div>
-        <div className="nav-right">
-          <span className="nav-username">@{user?.username}</span>
-          <button className="btn btn-ghost" onClick={handleLogout}>Sign out</button>
-        </div>
-      </header>
+      <Sidebar
+        user={user}
+        workspaceCount={{ my: myWorkspaces.length, shared: sharedWorkspaces.length }}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        onRefresh={loadWorkspaces}
+      />
 
-      {/* ── Main ────────────────────────────────────────────────── */}
       <main className="dashboard-main">
-        <div className="dashboard-welcome">
+        <div className="dashboard-header">
           <div>
-            <h1 className="dashboard-title">
-              Hello, <span className="accent">{user?.username}</span> 👋
+            <h1 className="dashboard-heading">
+              {activeTab === 'my' ? 'My Workspaces' : 'Shared With Me'}
             </h1>
-            <p className="dashboard-subtitle">Manage and open your collaborative workspaces.</p>
+            <p className="dashboard-meta">
+              {!loading && `${shown.length} workspace${shown.length !== 1 ? 's' : ''}`}
+            </p>
           </div>
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             + New Workspace
           </button>
         </div>
 
-        {loading ? (
-          <div className="workspace-grid">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="ws-card skeleton skeleton-card" />
-            ))}
-          </div>
-        ) : (
-          <div className="dashboard-content-layout">
-            <div className="workspaces-column">
-              {/* My Workspaces */}
-              <section className="ws-section">
-                <h2 className="ws-section-title">My Workspaces</h2>
-                {myWorkspaces.length === 0 ? (
-                  <div className="ws-empty">
-                    <p>You haven't created any workspaces yet.</p>
-                    <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
-                      Create one →
+        <div className="dashboard-content-layout">
+          <div className="workspaces-column">
+            <div className="ws-section">
+              {loading ? (
+                <div className="workspace-grid">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="ws-card skeleton skeleton-card" />
+                  ))}
+                </div>
+              ) : shown.length === 0 ? (
+                <div className="ws-empty">
+                  <span style={{ fontSize: '28px', opacity: 0.4 }}>
+                    {activeTab === 'my' ? '⊞' : '👥'}
+                  </span>
+                  <p>
+                    {activeTab === 'my'
+                      ? "You haven't created any workspaces yet."
+                      : "No workspaces have been shared with you."}
+                  </p>
+                  {activeTab === 'my' && (
+                    <button className="btn btn-secondary btn-sm" onClick={() => setShowCreate(true)}>
+                      Create workspace
                     </button>
-                  </div>
-                ) : (
-                  <div className="workspace-grid">
-                    {myWorkspaces.map(({ workspace, role }) => (
-                      <WorkspaceCard
-                        key={workspace._id}
-                        workspace={workspace}
-                        role={role}
-                        onClick={() => navigate(`/workspace/${workspace._id}`)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {/* Shared With Me */}
-              {sharedWorkspaces.length > 0 && (
-                <section className="ws-section">
-                  <h2 className="ws-section-title">Shared With Me</h2>
-                  <div className="workspace-grid">
-                    {sharedWorkspaces.map(({ workspace, role }) => (
-                      <WorkspaceCard
-                        key={workspace._id}
-                        workspace={workspace}
-                        role={role}
-                        onClick={() => navigate(`/workspace/${workspace._id}`)}
-                      />
-                    ))}
-                  </div>
-                </section>
+                  )}
+                </div>
+              ) : (
+                <div className="workspace-grid">
+                  {shown.map(({ workspace, role }) => (
+                    <WorkspaceCard
+                      key={workspace._id}
+                      workspace={workspace}
+                      role={role}
+                      onClick={() => navigate(`/workspace/${workspace._id}`)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
-
-            <div className="activity-column">
-              <RecentActivity workspaces={workspaces} refreshTrigger={refreshActivity} />
-            </div>
           </div>
-        )}
+
+          <div className="activity-column">
+            <RecentActivity workspaces={workspaces} refreshTrigger={refreshActivity} />
+          </div>
+        </div>
       </main>
 
-      {/* ── Create Modal ─────────────────────────────────────────── */}
       {showCreate && (
-        <CreateWorkspaceModal
-          onClose={() => setShowCreate(false)}
-          onCreated={handleCreated}
-        />
+        <CreateWorkspaceModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
       )}
     </div>
   )

@@ -217,10 +217,10 @@ const Workspace = () => {
 
   if (loading) return (
     <div className="workspace-page">
-      <header className="ws-topbar skeleton" style={{ height: '64px', width: '100%', borderRadius: 0 }} />
+      <header className="ws-topbar skeleton" style={{ height: 'var(--topbar-height)', borderRadius: 0 }} />
       <div className="ws-skeleton-layout">
-        <div className="file-explorer skeleton" style={{ width: '260px', height: '100%', borderRadius: 0 }} />
-        <div className="editor-container skeleton skeleton-editor" style={{ borderRadius: 0 }} />
+        <div style={{ width: '220px', height: '100%' }} className="skeleton" />
+        <div className="skeleton skeleton-editor" />
       </div>
     </div>
   );
@@ -228,14 +228,27 @@ const Workspace = () => {
   return (
     <div className="workspace-page">
       <header className="ws-topbar">
-        <div className="ws-topbar-left" onClick={handleRefresh} style={{ cursor: 'pointer' }} title="Click to refresh workspace">
-          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate('/dashboard'); }}>
-            ← Dashboard
+        <div className="ws-topbar-left">
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => navigate('/dashboard')}
+            title="Back to dashboard"
+          >
+            ←
           </button>
-          <div className="ws-name-badge">
-            <span className="ws-topbar-name">{workspace?.name}</span>
+          <div className="ws-breadcrumb">
+            <span
+              className="ws-breadcrumb-ws"
+              onClick={handleRefresh}
+              title="Click to refresh"
+            >
+              {workspace?.name}
+            </span>
             {activeFile && (
-              <span className="active-file-badge">{activeFile.name || 'main.js'}</span>
+              <>
+                <span className="ws-breadcrumb-sep">/</span>
+                <span className="ws-breadcrumb-file">{activeFile.name}</span>
+              </>
             )}
           </div>
         </div>
@@ -243,36 +256,49 @@ const Workspace = () => {
         <div className="ws-topbar-right">
           <div className="presence-row">
             {connectedUsers.map((u, i) => (
-              <span key={i} className={`presence-avatar ${u.role === 'owner' ? 'ring-owner' : ''}`} title={`${u.username} (${u.role})`}>
+              <span
+                key={i}
+                className={`presence-avatar ${u.role === 'owner' ? 'ring-owner' : ''}`}
+                title={`${u.username} (${u.role})`}
+              >
                 {u.username[0].toUpperCase()}
               </span>
             ))}
           </div>
 
+          {connectedUsers.length > 0 && <span className="topbar-divider" />}
+
           <span className={`role-badge ${myRole === 'owner' ? 'badge-owner' : myRole === 'editor' ? 'badge-editor' : 'badge-viewer'}`}>
             {myRole}
           </span>
 
+          <span className="topbar-divider" />
+
           <div className="topbar-actions">
-            <button className={`btn btn-ghost btn-sm ${showActivity ? 'active' : ''}`} onClick={() => { setShowMembers(false); setShowHistory(false); setShowActivity(!showActivity); }}>
-              🔔 Activity
+            <button
+              className={`btn btn-ghost btn-sm ${showActivity ? 'active' : ''}`}
+              onClick={() => { setShowMembers(false); setShowHistory(false); setShowActivity(!showActivity); }}
+            >
+              Activity
             </button>
-
-            <button className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`} onClick={() => { setShowMembers(false); setShowActivity(false); setShowHistory(!showHistory); }}>
-              ⏳ History
+            <button
+              className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`}
+              onClick={() => { setShowMembers(false); setShowActivity(false); setShowHistory(!showHistory); }}
+            >
+              History
             </button>
-
-            <button className={`btn btn-ghost btn-sm ${showMembers ? 'active' : ''}`} onClick={() => { setShowHistory(false); setShowActivity(false); setShowMembers(!showMembers); }}>
-              👥 Members
+            <button
+              className={`btn btn-ghost btn-sm ${showMembers ? 'active' : ''}`}
+              onClick={() => { setShowHistory(false); setShowActivity(false); setShowMembers(!showMembers); }}
+            >
+              Members
             </button>
-
             {isOwner && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
                 Invite
               </button>
             )}
-
-            <button className="btn btn-ghost btn-sm btn-error" onClick={handleLeaveSession} title="Leave Session">
+            <button className="btn btn-ghost btn-sm btn-error" onClick={handleLeaveSession}>
               Leave
             </button>
           </div>

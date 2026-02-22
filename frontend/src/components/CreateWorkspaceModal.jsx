@@ -3,16 +3,13 @@ import toast from 'react-hot-toast'
 import { createWorkspace } from '../services/workspaceApi'
 
 const LANGUAGES = [
-  { value: 'javascript', label: 'JavaScript' },
-  { value: 'typescript', label: 'TypeScript' },
-  { value: 'python', label: 'Python' },
-  { value: 'java', label: 'Java' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'go', label: 'Go' },
-  { value: 'rust', label: 'Rust' },
-  { value: 'html', label: 'HTML' },
-  { value: 'css', label: 'CSS' },
-  { value: 'json', label: 'JSON' },
+  { value: 'javascript', label: 'JS',   color: '#f7df1e' },
+  { value: 'typescript', label: 'TS',   color: '#3178c6' },
+  { value: 'python',     label: 'Py',   color: '#3572a5' },
+  { value: 'java',       label: 'Java', color: '#b07219' },
+  { value: 'cpp',        label: 'C++',  color: '#f34b7d' },
+  { value: 'go',         label: 'Go',   color: '#00add8' },
+  { value: 'rust',       label: 'Rust', color: '#dea584' },
 ]
 
 const CreateWorkspaceModal = ({ onClose, onCreated }) => {
@@ -22,14 +19,11 @@ const CreateWorkspaceModal = ({ onClose, onCreated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name.trim()) {
-      toast.error('Workspace name is required.')
-      return
-    }
+    if (!name.trim()) { toast.error('Workspace name is required.'); return }
     setLoading(true)
     try {
       const data = await createWorkspace(name.trim(), language)
-      toast.success(`Workspace "${name}" created!`)
+      toast.success(`"${name}" created`)
       onCreated(data)
       onClose()
     } catch (err) {
@@ -41,10 +35,10 @@ const CreateWorkspaceModal = ({ onClose, onCreated }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">New Workspace</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
@@ -54,9 +48,9 @@ const CreateWorkspaceModal = ({ onClose, onCreated }) => {
               id="ws-name"
               type="text"
               className="form-input"
-              placeholder="e.g. My React Project"
+              placeholder="My React App"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={e => setName(e.target.value)}
               autoFocus
               disabled={loading}
               maxLength={80}
@@ -64,26 +58,32 @@ const CreateWorkspaceModal = ({ onClose, onCreated }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="ws-lang" className="form-label">Language</label>
-            <select
-              id="ws-lang"
-              className="form-input form-select"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              disabled={loading}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
+            <label className="form-label">Language</label>
+            <div className="lang-grid">
+              {LANGUAGES.map(l => (
+                <button
+                  key={l.value}
+                  type="button"
+                  className={`lang-pill ${language === l.value ? 'selected' : ''}`}
+                  onClick={() => setLanguage(l.value)}
+                  disabled={loading}
+                >
+                  <span
+                    className="lang-dot"
+                    style={{ background: l.color }}
+                  />
+                  {l.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? <span className="btn-spinner" /> : 'Create Workspace'}
+              {loading ? <span className="btn-spinner" /> : 'Create'}
             </button>
           </div>
         </form>

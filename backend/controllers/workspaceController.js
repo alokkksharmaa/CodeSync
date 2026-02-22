@@ -83,7 +83,8 @@ export const getWorkspaces = async (req, res) => {
         path: 'workspaceId',
         populate: { path: 'owner', select: 'username email' },
       })
-      .sort({ addedAt: -1 });
+      .sort({ addedAt: -1 })
+      .lean();
 
     const workspaces = memberships
       .filter((m) => m.workspaceId) 
@@ -105,30 +106,23 @@ export const getWorkspace = async (req, res) => {
   try {
     const workspaceId = req.params.id;
 
-    const workspace = await Workspace.findById(workspaceId).populate(
-      'owner',
-      'username email'
-    );
+    const workspace = await Workspace.findById(workspaceId)
+      .populate('owner', 'username email')
+      .lean();
 
     if (!workspace) {
       return res.status(404).json({ message: 'Workspace not found.' });
     }
 
-    let files = await File.find({ workspaceId }).sort({ name: 1 });
-    files = files.map(f => {
-      const doc = f.toObject();
-      if (!doc.name) doc.name = 'main.js';
-      return doc;
-    });
-
-    const members = await WorkspaceMember.find({ workspaceId }).populate(
-      'userId',
-      'username email'
-    );
+    const files = await File.find({ workspaceId }).sort({ name: 1 }).lean();
+    
+    const members = await WorkspaceMember.find({ workspaceId })
+      .populate('userId', 'username email')
+      .lean();
 
     return res.status(200).json({
       workspace,
-      files,
+      files: files.map(f => ({ ...f, name: f.name || 'main.js' })),
       members: members.map(m => ({
         _id: m._id,
         user: m.userId,

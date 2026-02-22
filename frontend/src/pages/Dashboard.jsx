@@ -4,7 +4,10 @@ import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { fetchWorkspaces, fetchWorkspace } from '../services/workspaceApi'
 import api from '../services/api'
+import { io } from 'socket.io-client'
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal'
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 const LANG_COLORS = {
   javascript: '#f7df1e',
@@ -58,7 +61,7 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
   )
 }
 
-const RecentActivity = ({ workspaces }) => {
+const RecentActivity = ({ workspaces, refreshTrigger }) => {
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -88,7 +91,7 @@ const RecentActivity = ({ workspaces }) => {
 
   useEffect(() => {
     fetchActivities()
-  }, [fetchActivities])
+  }, [fetchActivities, refreshTrigger])
 
   const formatTime = (date) => {
     const now = new Date()
@@ -141,12 +144,9 @@ const Dashboard = () => {
   const [workspaces, setWorkspaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
+  const [refreshActivity, setRefreshActivity] = useState(0)
 
-  useEffect(() => {
-    loadWorkspaces()
-  }, [])
-
-  const loadWorkspaces = async () => {
+  const loadWorkspaces = useCallback(async () => {
     setLoading(true)
     try {
       const data = await fetchWorkspaces()
@@ -156,7 +156,35 @@ const Dashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadWorkspaces()
+  }, [loadWorkspaces])
+
+  useEffect(() => {
+    if (workspaces.length === 0) return;
+
+    // Join a global user room to receive activity updates for all their workspaces
+    const socket = io(BACKEND_URL, { transports: ['websocket'] });
+    
+    socket.on('connect', () => {
+      // Join rooms for all current workspaces to receive activity_update
+      workspaces.forEach(({ workspace }) => {
+        socket.emit('join_workspace', { 
+          workspaceId: workspace._id, 
+          username: user?.username, 
+          userId: user?.id 
+        });
+      });
+    });
+
+    socket.on('activity_update', () => {
+      setRefreshActivity(prev => prev + 1);
+    });
+
+    return () => socket.disconnect();
+  }, [workspaces, user]);
 
   const handleLogout = () => {
     logout()
@@ -178,7 +206,7 @@ const Dashboard = () => {
     <div className="dashboard-page">
       {/* ── Nav ─────────────────────────────────────────────────── */}
       <header className="dashboard-nav">
-        <div className="nav-brand">
+        <div className="nav-brand" onClick={loadWorkspaces} style={{ cursor: 'pointer' }} title="Click to refresh workspaces">
           <span className="logo-icon">⚡</span>
           <span className="logo-text">CodeSync</span>
         </div>
@@ -254,7 +282,7 @@ const Dashboard = () => {
             </div>
 
             <div className="activity-column">
-              <RecentActivity workspaces={workspaces} />
+              <RecentActivity workspaces={workspaces} refreshTrigger={refreshActivity} />
             </div>
           </div>
         )}

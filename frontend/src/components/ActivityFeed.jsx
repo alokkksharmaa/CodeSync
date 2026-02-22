@@ -1,47 +1,50 @@
 import { useState, useEffect } from 'react'
+import api from '../services/api'
 
 const ActivityFeed = ({ socket, workspaceId }) => {
   const [activities, setActivities] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchInitial = async () => {
+      try {
+        const res = await api.get(`/api/workspaces/${workspaceId}/activity`)
+        setActivities(res.data.map(a => ({
+          ...a,
+          time: a.createdAt,
+          user: a.metadata?.username || 'User',
+          file: a.metadata?.filename || a.targetId
+        })))
+      } catch (err) {
+        console.error('Failed to load initial activity', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchInitial()
+  }, [workspaceId])
 
   useEffect(() => {
     if (!socket) return
 
-    // Fetch initial activity or wait for events
-    // For now we listen for activity_update which triggers a refresh if we had an API
-    // But we can also listen for specific events broadcasted from server.js
-
-    const handleUserJoined = (data) => {
-      addActivity({ type: 'USER_JOINED', user: data.username, time: new Date() })
+    const handleActivityUpdate = () => {
+      // Refresh list when server signals an activity occurred
+      api.get(`/api/workspaces/${workspaceId}/activity`).then(res => {
+        setActivities(res.data.map(a => ({
+          ...a,
+          time: a.createdAt,
+          user: a.metadata?.username || 'User',
+          file: a.metadata?.filename || a.targetId
+        })))
+      })
     }
 
-    const handleUserLeft = (data) => {
-      addActivity({ type: 'USER_LEFT', user: data.username, time: new Date() })
-    }
-
-    const handleFileCreated = (data) => {
-      addActivity({ type: 'FILE_CREATED', user: 'Someone', file: data.name, time: new Date() })
-    }
-
-    const handleFileDeleted = (data) => {
-      addActivity({ type: 'FILE_DELETED', user: 'Someone', file: data.fileId, time: new Date() })
-    }
-
-    socket.on('user_joined', handleUserJoined)
-    socket.on('user_left', handleUserLeft)
-    socket.on('file_created', handleFileCreated)
-    socket.on('file_deleted', handleFileDeleted)
+    socket.on('activity_update', handleActivityUpdate)
 
     return () => {
-      socket.off('user_joined', handleUserJoined)
-      socket.off('user_left', handleUserLeft)
-      socket.off('file_created', handleFileCreated)
-      socket.off('file_deleted', handleFileDeleted)
+      socket.off('activity_update', handleActivityUpdate)
     }
-  }, [socket])
-
-  const addActivity = (activity) => {
-    setActivities(prev => [activity, ...prev].slice(0, 20))
-  }
+  }, [socket, workspaceId])
 
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -59,10 +62,12 @@ const ActivityFeed = ({ socket, workspaceId }) => {
               <span className="activity-time">{formatTime(act.time)}</span>
               <div className="activity-content">
                 <strong>{act.user}</strong> 
-                {act.type === 'USER_JOINED' && ' joined the workspace'}
-                {act.type === 'USER_LEFT' && ' left the workspace'}
-                {act.type === 'FILE_CREATED' && ` created file: ${act.file}`}
-                {act.type === 'FILE_DELETED' && ` deleted file: ${act.file}`}
+                {act.actionType === 'USER_JOINED' && ' joined the workspace'}
+                {act.actionType === 'USER_LEFT' && ' left the workspace'}
+                {act.actionType === 'FILE_CREATED' && ` created file: ${act.file}`}
+                {act.actionType === 'FILE_DELETED' && ` deleted file: ${act.file}`}
+                {act.actionType === 'FILE_UPDATED' && ` edited file: ${act.file}`}
+                {act.actionType === 'WORKSPACE_UPDATED' && ' updated workspace settings'}
               </div>
             </div>
           ))

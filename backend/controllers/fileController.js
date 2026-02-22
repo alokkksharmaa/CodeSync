@@ -45,13 +45,12 @@ export const createFile = async (req, res) => {
 // ─── GET /api/files/open/:id ───────────────────────────────────────────────
 export const getFileContent = async (req, res) => {
   try {
-    const file = await File.findById(req.params.id);
+    const file = await File.findById(req.params.id).lean();
     if (!file) {
       return res.status(404).json({ message: 'File not found.' });
     }
 
-    const doc = file.toObject();
-    if (!doc.name) doc.name = 'main.js';
+    const doc = { ...file, name: file.name || 'main.js' };
 
     return res.status(200).json(doc);
   } catch (error) {

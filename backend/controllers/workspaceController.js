@@ -4,22 +4,56 @@ import File from '../models/File.js';
 import User from '../models/User.js';
 import { logActivity } from '../utils/logger.js';
 
+const LANGUAGE_TEMPLATES = {
+  javascript: {
+    filename: 'main.js',
+    content: '// Welcome to CodeSync\nconsole.log("Hello CodeSync");'
+  },
+  typescript: {
+    filename: 'index.ts',
+    content: '// Welcome to CodeSync\nconst message: string = "Hello CodeSync";\nconsole.log(message);'
+  },
+  python: {
+    filename: 'main.py',
+    content: '# Welcome to CodeSync\nprint("Hello CodeSync")'
+  },
+  cpp: {
+    filename: 'main.cpp',
+    content: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello CodeSync" << endl;\n    return 0;\n}'
+  },
+  java: {
+    filename: 'Main.java',
+    content: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello CodeSync");\n    }\n}'
+  },
+  go: {
+    filename: 'main.go',
+    content: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello CodeSync")\n}'
+  },
+  rust: {
+    filename: 'main.rs',
+    content: 'fn main() {\n    println!("Hello CodeSync");\n}'
+  }
+};
+
 // ─── POST /api/workspaces ─────────────────────────────────────────────────────
 export const createWorkspace = async (req, res) => {
   try {
-    const { name, language } = req.body;
+    const { name, language = 'javascript' } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Workspace name is required.' });
     }
 
+    const trimmedName = name.trim();
+    const template = LANGUAGE_TEMPLATES[language] || LANGUAGE_TEMPLATES.javascript;
+
     const workspace = await Workspace.create({
-      name: name.trim(),
+      name: trimmedName,
       owner: req.user.id,
-      language: language || 'javascript',
+      language: language,
     });
 
-    const membership = await WorkspaceMember.create({
+    await WorkspaceMember.create({
       workspaceId: workspace._id,
       userId: req.user.id,
       role: 'owner',
@@ -27,14 +61,14 @@ export const createWorkspace = async (req, res) => {
 
     const file = await File.create({
       workspaceId: workspace._id,
-      name: 'main.js',
+      name: template.filename,
       path: '/',
-      content: '// Welcome to CodeSync\nconsole.log("Hello World");',
-      language: language || 'javascript',
+      content: template.content,
+      language: language,
       lastEditedBy: req.user.id,
     });
 
-    return res.status(201).json({ workspace, membership, file });
+    return res.status(201).json({ workspace, file });
   } catch (error) {
     console.error('[createWorkspace error]', error);
     return res.status(500).json({ message: 'Failed to create workspace.' });

@@ -15,6 +15,7 @@ import {
 } from '../controllers/memberController.js';
 import { leaveSession } from '../controllers/sessionController.js';
 import { transferOwnership } from '../controllers/ownershipController.js';
+import { getActivities } from '../controllers/activityController.js';
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.use(authMiddleware);
 router.post('/', createWorkspace);
 router.get('/', getWorkspaces);
 router.get('/:id', requireRole('viewer'), getWorkspace); 
+router.get('/:id/activity', requireRole('viewer'), getActivities);
 router.delete('/:id', isOwner, deleteWorkspace);
 router.patch('/:id/settings', isOwner, updateWorkspaceSettings);
 router.delete('/:id/session', leaveSession);

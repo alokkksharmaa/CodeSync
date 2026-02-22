@@ -1,10 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Dashboard from './pages/Dashboard'
-import Workspace from './pages/Workspace'
+
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Workspace = lazy(() => import('./pages/Workspace'))
 
 const App = () => {
   const { isAuthenticated, loading } = useAuth()
@@ -12,7 +14,8 @@ const App = () => {
   if (loading) return null
 
   return (
-    <Routes>
+    <Suspense fallback={<div className="loading-screen"><div className="spinner" /></div>}>
+      <Routes>
       {/* Public routes */}
       <Route
         path="/login"
@@ -45,6 +48,7 @@ const App = () => {
       <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
     </Routes>
+    </Suspense>
   )
 }
 

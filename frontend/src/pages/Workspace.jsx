@@ -34,10 +34,16 @@ const Workspace = () => {
   const [showMembers, setShowMembers] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const socketRef = useRef(null);
   const colorRef = useRef(randomColor());
   const isRemoteChange = useRef(false);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+    toast.success('Refreshing workspace...', { duration: 1000 });
+  }, []);
 
   // ── Load workspace & initial file list ────────────────────────────────────
   useEffect(() => {
@@ -49,7 +55,7 @@ const Workspace = () => {
         setMembers(data.members || []);
         setMyRole(data.myRole);
         
-        if (data.files?.length > 0) {
+        if (data.files?.length > 0 && !activeFileId) {
           setActiveFileId(data.files[0]._id);
         }
       } catch (err) {
@@ -60,7 +66,7 @@ const Workspace = () => {
       }
     };
     load();
-  }, [workspaceId]);
+  }, [workspaceId, refreshKey]);
 
   // ── Open specific file ───────────────────────────────────────────────────
   useEffect(() => {
@@ -209,8 +215,8 @@ const Workspace = () => {
   return (
     <div className="workspace-page">
       <header className="ws-topbar">
-        <div className="ws-topbar-left">
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')}>
+        <div className="ws-topbar-left" onClick={handleRefresh} style={{ cursor: 'pointer' }} title="Click to refresh workspace">
+          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate('/dashboard'); }}>
             ← Dashboard
           </button>
           <div className="ws-name-badge">

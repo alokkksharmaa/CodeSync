@@ -45,5 +45,7 @@ const activityLogSchema = new mongoose.Schema(
   }
 );
 
+activityLogSchema.index({ workspaceId: 1, createdAt: -1 });
+
 const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
 export default ActivityLog;

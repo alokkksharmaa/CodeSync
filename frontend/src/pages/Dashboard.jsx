@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { fetchWorkspaces } from '../services/workspaceApi'
+import { fetchWorkspaces, fetchWorkspace } from '../services/workspaceApi'
+import api from '../services/api'
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal'
 
 const LANG_COLORS = {
@@ -23,8 +24,13 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
     month: 'short', day: 'numeric', year: 'numeric',
   })
 
+  const handlePrefetch = () => {
+    // Prefetch workspace data on hover to speed up navigation
+    fetchWorkspace(workspace._id).catch(() => {});
+  }
+
   return (
-    <div className="ws-card">
+    <div className="ws-card" onMouseEnter={handlePrefetch}>
       <div className="ws-card-top">
         <span
           className="language-badge"
@@ -53,27 +59,77 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
 }
 
 const RecentActivity = ({ workspaces }) => {
-  // Mock recent activity for dashboard visibility
-  // In a real app, this would fetch from /api/activity
-  const activities = [
-    { id: 1, type: 'FILE_UPDATED', user: 'alok', file: 'server.js', time: '2m ago' },
-    { id: 2, type: 'USER_JOINED', user: 'sarah', workspace: 'Project X', time: '5m ago' },
-    { id: 3, type: 'FILE_CREATED', user: 'mike', file: 'App.jsx', time: '12m ago' },
-  ]
+  const [activities, setActivities] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchActivities = useCallback(async () => {
+    // Fetch unique workspace IDs from memberships
+    const wsIds = workspaces.map(w => w.workspace._id)
+    if (wsIds.length === 0) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      // In this version, we fetch global activities relevant to user's workspaces
+      // or we can aggregate from individual /api/workspaces/:id/activity
+      // For simplicity & performance, we'll fetch from a combined endpoint or mock aggregator
+      const allActivities = await Promise.all(
+        wsIds.slice(0, 5).map(id => api.get(`/api/workspaces/${id}/activity`).then(res => res.data))
+      )
+      const combined = allActivities.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10)
+      setActivities(combined)
+    } catch (err) {
+      console.error('Failed to fetch dashboard activity', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [workspaces])
+
+  useEffect(() => {
+    fetchActivities()
+  }, [fetchActivities])
+
+  const formatTime = (date) => {
+    const now = new Date()
+    const diff = Math.floor((now - new Date(date)) / 1000)
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+    return new Date(date).toLocaleDateString()
+  }
+
+  if (loading) return (
+    <section className="ws-section">
+      <h2 className="ws-section-title">Recent Activity</h2>
+      <div className="activity-skeleton">
+        {[1, 2, 3].map(i => <div key={i} className="skeleton skeleton-activity" />)}
+      </div>
+    </section>
+  )
 
   return (
     <section className="ws-section">
       <h2 className="ws-section-title">Recent Activity</h2>
       <div className="activity-list-mini">
-        {activities.map(act => (
-          <div key={act.id} className="activity-item-mini">
-            <span className="activity-dot"></span>
-            <span className="activity-text">
-              <strong>{act.user}</strong> {act.type === 'FILE_UPDATED' ? `edited ${act.file}` : act.type === 'USER_JOINED' ? `joined ${act.workspace}` : `created ${act.file}`}
-            </span>
-            <span className="activity-time">{act.time}</span>
-          </div>
-        ))}
+        {activities.length === 0 ? (
+          <p className="no-activity-mini">No recent activity</p>
+        ) : (
+          activities.map(act => (
+            <div key={act._id} className="activity-item-mini">
+              <span className="activity-dot"></span>
+              <span className="activity-text">
+                <strong>{act.metadata?.username || 'User'}</strong> {
+                  act.actionType === 'FILE_UPDATED' ? 'edited a file' : 
+                  act.actionType === 'USER_JOINED' ? 'joined workspace' : 
+                  act.actionType === 'FILE_CREATED' ? 'created a file' : 
+                  act.actionType === 'USER_LEFT' ? 'left workspace' : 'performed an action'
+                }
+              </span>
+              <span className="activity-time">{formatTime(act.createdAt)}</span>
+            </div>
+          ))
+        )}
       </div>
     </section>
   )
@@ -147,9 +203,10 @@ const Dashboard = () => {
         </div>
 
         {loading ? (
-          <div className="ws-loading">
-            <div className="spinner" />
-            <p>Loading workspaces…</p>
+          <div className="workspace-grid">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="ws-card skeleton skeleton-card" />
+            ))}
           </div>
         ) : (
           <div className="dashboard-content-layout">

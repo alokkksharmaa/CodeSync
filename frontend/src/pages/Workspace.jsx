@@ -210,7 +210,15 @@ const Workspace = () => {
   const canEdit = myRole === 'owner' || myRole === 'editor';
   const isOwner = myRole === 'owner';
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return (
+    <div className="workspace-page">
+      <header className="ws-topbar skeleton" style={{ height: '64px', width: '100%', borderRadius: 0 }} />
+      <div className="ws-skeleton-layout">
+        <div className="file-explorer skeleton" style={{ width: '260px', height: '100%', borderRadius: 0 }} />
+        <div className="editor-container skeleton skeleton-editor" style={{ borderRadius: 0 }} />
+      </div>
+    </div>
+  );
 
   return (
     <div className="workspace-page">

@@ -92,12 +92,20 @@ body {
   border-radius: var(--radius-lg);
   padding: 40px 36px;
   box-shadow: var(--shadow-card);
-  animation: fadeUp 0.3s ease both;
+  animation: premiumEntrance 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes premiumEntrance {
+  from { 
+    opacity: 0; 
+    transform: scale(0.96) translateY(20px);
+    filter: blur(4px);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
 }
 
 .auth-header {
@@ -1577,8 +1585,20 @@ body {
   margin-bottom: 12px;
 }
 
-.activity-skeleton {
-  padding: 16px;
+.skeleton-explorer {
+  height: 32px;
+  margin-bottom: 8px;
+}
+
+.skeleton-editor {
+  flex: 1;
+  height: 100%;
+}
+
+.ws-skeleton-layout {
+  display: flex;
+  height: calc(100vh - 64px);
+  gap: 1px;
 }
 
 .no-activity-mini {

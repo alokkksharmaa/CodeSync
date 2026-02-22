@@ -8,21 +8,38 @@ const FileExplorer = ({ workspaceId, files, activeFileId, onFileSelect, onFilesC
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!newFileName.trim()) return;
+    const trimmedName = newFileName.trim();
+    if (!trimmedName) {
+      setIsCreating(false);
+      return;
+    }
+
+    // Check for duplicates locally first for instant feedback
+    if (files.find(f => f.name.toLowerCase() === trimmedName.toLowerCase())) {
+      toast.error('A file with this name already exists.');
+      return;
+    }
 
     try {
       const newFile = await createFile({
         workspaceId,
-        name: newFileName.trim(),
-        language: getLanguageFromExt(newFileName),
+        name: trimmedName,
+        language: getLanguageFromExt(trimmedName),
       });
       onFilesChange([...files, newFile]);
       setNewFileName('');
       setIsCreating(false);
       onFileSelect(newFile._id);
-      toast.success('File created');
+      toast.success(`Created ${trimmedName}`);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create file');
+      const msg = err.response?.data?.message || 'Failed to create file';
+      toast.error(msg);
+      // Keep state open if it's a name error so user can fix it easily
+      if (msg.includes('exists')) {
+        // focus is already there
+      } else {
+        setIsCreating(false);
+      }
     }
   };
 
@@ -41,29 +58,45 @@ const FileExplorer = ({ workspaceId, files, activeFileId, onFileSelect, onFilesC
   };
 
   const getLanguageFromExt = (name) => {
-    const ext = name?.split('.').pop() || '';
+    const ext = name?.split('.').pop().toLowerCase() || '';
     const map = {
       js: 'javascript',
+      jsx: 'javascript',
       ts: 'typescript',
+      tsx: 'typescript',
       py: 'python',
       java: 'java',
       cpp: 'cpp',
+      c: 'cpp',
+      go: 'go',
+      rust: 'rust',
+      rs: 'rust',
       html: 'html',
       css: 'css',
-      json: 'json'
+      json: 'json',
+      md: 'markdown'
     };
     return map[ext] || 'javascript';
   };
 
   const getIcon = (name) => {
-    const ext = name?.split('.').pop() || '';
+    const ext = name?.split('.').pop().toLowerCase() || '';
     switch (ext) {
-      case 'js': return 'JS';
-      case 'ts': return 'TS';
+      case 'js':
+      case 'jsx': return 'JS';
+      case 'ts':
+      case 'tsx': return 'TS';
       case 'py': return 'PY';
+      case 'java': return '♨️';
+      case 'cpp':
+      case 'c': return 'C++';
+      case 'go': return 'GO';
+      case 'rs':
+      case 'rust': return '🦀';
       case 'css': return '#';
       case 'html': return '<>';
       case 'json': return '{ }';
+      case 'md': return '📝';
       default: return '📄';
     }
   };

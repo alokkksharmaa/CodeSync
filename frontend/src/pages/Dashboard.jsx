@@ -24,7 +24,7 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
   })
 
   return (
-    <div className="ws-card" onClick={onClick}>
+    <div className="ws-card">
       <div className="ws-card-top">
         <span
           className="language-badge"
@@ -36,7 +36,7 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
           {role}
         </span>
       </div>
-      <h3 className="ws-card-name">{workspace.name}</h3>
+      <h3 className="ws-card-name" title={workspace.name}>{workspace.name}</h3>
       <p className="ws-card-meta">
         {role !== 'owner' && workspace.owner?.username
           ? `by @${workspace.owner.username} · `
@@ -44,9 +44,38 @@ const WorkspaceCard = ({ workspace, role, onClick }) => {
         Updated {updatedAt}
       </p>
       <div className="ws-card-footer">
-        <button className="btn btn-primary btn-sm">Open →</button>
+        <button className="btn btn-primary btn-sm btn-full" onClick={onClick}>
+          Quick Join →
+        </button>
       </div>
     </div>
+  )
+}
+
+const RecentActivity = ({ workspaces }) => {
+  // Mock recent activity for dashboard visibility
+  // In a real app, this would fetch from /api/activity
+  const activities = [
+    { id: 1, type: 'FILE_UPDATED', user: 'alok', file: 'server.js', time: '2m ago' },
+    { id: 2, type: 'USER_JOINED', user: 'sarah', workspace: 'Project X', time: '5m ago' },
+    { id: 3, type: 'FILE_CREATED', user: 'mike', file: 'App.jsx', time: '12m ago' },
+  ]
+
+  return (
+    <section className="ws-section">
+      <h2 className="ws-section-title">Recent Activity</h2>
+      <div className="activity-list-mini">
+        {activities.map(act => (
+          <div key={act.id} className="activity-item-mini">
+            <span className="activity-dot"></span>
+            <span className="activity-text">
+              <strong>{act.user}</strong> {act.type === 'FILE_UPDATED' ? `edited ${act.file}` : act.type === 'USER_JOINED' ? `joined ${act.workspace}` : `created ${act.file}`}
+            </span>
+            <span className="activity-time">{act.time}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -80,7 +109,6 @@ const Dashboard = () => {
   }
 
   const handleCreated = (data) => {
-    // Optimistically add the new workspace to the list
     setWorkspaces((prev) => [
       { workspace: data.workspace, role: 'owner', addedAt: new Date() },
       ...prev,
@@ -124,48 +152,54 @@ const Dashboard = () => {
             <p>Loading workspaces…</p>
           </div>
         ) : (
-          <>
-            {/* My Workspaces */}
-            <section className="ws-section">
-              <h2 className="ws-section-title">My Workspaces</h2>
-              {myWorkspaces.length === 0 ? (
-                <div className="ws-empty">
-                  <p>You haven't created any workspaces yet.</p>
-                  <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
-                    Create one →
-                  </button>
-                </div>
-              ) : (
-                <div className="workspace-grid">
-                  {myWorkspaces.map(({ workspace, role }) => (
-                    <WorkspaceCard
-                      key={workspace._id}
-                      workspace={workspace}
-                      role={role}
-                      onClick={() => navigate(`/workspace/${workspace._id}`)}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            {/* Shared With Me */}
-            {sharedWorkspaces.length > 0 && (
+          <div className="dashboard-content-layout">
+            <div className="workspaces-column">
+              {/* My Workspaces */}
               <section className="ws-section">
-                <h2 className="ws-section-title">Shared With Me</h2>
-                <div className="workspace-grid">
-                  {sharedWorkspaces.map(({ workspace, role }) => (
-                    <WorkspaceCard
-                      key={workspace._id}
-                      workspace={workspace}
-                      role={role}
-                      onClick={() => navigate(`/workspace/${workspace._id}`)}
-                    />
-                  ))}
-                </div>
+                <h2 className="ws-section-title">My Workspaces</h2>
+                {myWorkspaces.length === 0 ? (
+                  <div className="ws-empty">
+                    <p>You haven't created any workspaces yet.</p>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>
+                      Create one →
+                    </button>
+                  </div>
+                ) : (
+                  <div className="workspace-grid">
+                    {myWorkspaces.map(({ workspace, role }) => (
+                      <WorkspaceCard
+                        key={workspace._id}
+                        workspace={workspace}
+                        role={role}
+                        onClick={() => navigate(`/workspace/${workspace._id}`)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
-            )}
-          </>
+
+              {/* Shared With Me */}
+              {sharedWorkspaces.length > 0 && (
+                <section className="ws-section">
+                  <h2 className="ws-section-title">Shared With Me</h2>
+                  <div className="workspace-grid">
+                    {sharedWorkspaces.map(({ workspace, role }) => (
+                      <WorkspaceCard
+                        key={workspace._id}
+                        workspace={workspace}
+                        role={role}
+                        onClick={() => navigate(`/workspace/${workspace._id}`)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            <div className="activity-column">
+              <RecentActivity workspaces={workspaces} />
+            </div>
+          </div>
         )}
       </main>
 

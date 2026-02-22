@@ -183,6 +183,36 @@ body {
   cursor: not-allowed;
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .form-input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color var(--transition), background var(--transition);
+}
+
+.password-toggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
 /* ─── Buttons ─────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -318,13 +348,73 @@ body {
 
 /* Main */
 .dashboard-main {
-  max-width: 840px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 48px 24px;
   display: flex;
   flex-direction: column;
   gap: 32px;
   animation: fadeUp 0.35s ease both;
+}
+
+.dashboard-content-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.activity-list-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.activity-item-mini {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  position: relative;
+}
+
+.activity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.activity-text {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.activity-text strong {
+  color: var(--text-primary);
+}
+
+.activity-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .dashboard-content-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .activity-column {
+    order: -1;
+  }
 }
 
 .dashboard-welcome {

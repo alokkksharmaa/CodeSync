@@ -26,6 +26,7 @@ const activityLogSchema = new mongoose.Schema(
         'FILE_CREATED',
         'FILE_DELETED',
         'FILE_RENAMED',
+        'FILE_UPDATED',
         'WORKSPACE_UPDATED',
         'WORKSPACE_DELETED'
       ],

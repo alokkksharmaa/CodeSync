@@ -13,6 +13,7 @@ import {
   updateMemberRole,
   removeMember
 } from '../controllers/memberController.js';
+import { leaveSession } from '../controllers/sessionController.js';
 import { transferOwnership } from '../controllers/ownershipController.js';
 
 const router = express.Router();
@@ -25,6 +26,7 @@ router.get('/', getWorkspaces);
 router.get('/:id', requireRole('viewer'), getWorkspace); 
 router.delete('/:id', isOwner, deleteWorkspace);
 router.patch('/:id/settings', isOwner, updateWorkspaceSettings);
+router.delete('/:id/session', leaveSession);
 
 // ─── Member & Role Management ────────────────────────────────────────────────
 // Invite user

@@ -96,7 +96,85 @@ io.on('connection', (socket) => {
     io.to(`workspace:${workspaceId}`).emit('activity_update');
   });
 
-  // ... (rest of the listeners) ...
+  // ── join_file ───────────────────────────────────────────────────────────────
+  socket.on('join_file', async ({ fileId }) => {
+    if (!fileId) return;
+    
+    const rooms = Array.from(socket.rooms);
+    rooms.forEach(room => {
+      if (room.startsWith('file:')) socket.leave(room);
+    });
+
+    socket.join(`file:${fileId}`);
+    
+    try {
+      const file = await File.findById(fileId);
+      socket.emit('file_joined', {
+        fileId,
+        code: file?.content || '',
+      });
+    } catch (err) {
+      socket.emit('file_joined', { fileId, code: '' });
+    }
+  });
+
+  // ── code_change ─────────────────────────────────────────────────────────────
+  socket.on('code_change', ({ fileId, code, userId }) => {
+    if (!fileId) return;
+
+    if (socket.data.role === 'viewer') {
+      console.log(`[socket] Blocked change from viewer: ${socket.data.username}`);
+      return;
+    }
+
+    socket.to(`file:${fileId}`).emit('code_update', { 
+      fileId, 
+      code,
+      userId: socket.data.userId,
+      username: socket.data.username,
+      timestamp: new Date()
+    });
+
+    if (saveTimers[fileId]) clearTimeout(saveTimers[fileId]);
+    saveTimers[fileId] = setTimeout(async () => {
+      try {
+        await File.findByIdAndUpdate(
+          fileId,
+          { content: code, lastEditedBy: userId || null }
+        );
+        
+        await ActivityLog.create({
+          workspaceId: socket.data.workspaceId,
+          userId: socket.data.userId,
+          actionType: 'FILE_UPDATED',
+          targetId: fileId,
+          metadata: { username: socket.data.username }
+        });
+
+        io.to(`workspace:${socket.data.workspaceId}`).emit('activity_update');
+        delete saveTimers[fileId];
+      } catch (err) {
+        console.error('[socket] Failed to persist code:', err.message);
+      }
+    }, 5000);
+  });
+
+  // ── cursor_position ────────────────────────────────────────────────────────
+  socket.on('cursor_position', ({ fileId, position, username, color }) => {
+    if (!fileId) return;
+    socket.to(`file:${fileId}`).emit('cursor_update', {
+      userId: socket.id,
+      position,
+      username,
+      color,
+    });
+  });
+
+  // ── role_sync (internal) ──────────────────────────────────────────────────
+  socket.on('role_sync', ({ role }) => {
+    socket.data.role = role;
+    console.log(`[socket] Role sync for ${socket.data.username}: ${role}`);
+  });
 
   // ── disconnect ──────────────────────────────────────────────────────────────
   socket.on('disconnect', async () => {

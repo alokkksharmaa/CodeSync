@@ -28,6 +28,10 @@ export const createFile = async (req, res) => {
       metadata: { name: file.name }
     });
 
+    const io = req.app.get('io');
+    io.to(`workspace:${workspaceId}`).emit('file_created', file);
+    io.to(`workspace:${workspaceId}`).emit('activity_update');
+
     return res.status(201).json(file);
   } catch (error) {
     console.error('[createFile error]', error);
@@ -101,6 +105,10 @@ export const renameFile = async (req, res) => {
       metadata: { name }
     });
 
+    const io = req.app.get('io');
+    io.to(`workspace:${file.workspaceId}`).emit('file_renamed', file);
+    io.to(`workspace:${file.workspaceId}`).emit('activity_update');
+
     return res.status(200).json(file);
   } catch (error) {
     console.error('[renameFile error]', error);
@@ -126,6 +134,10 @@ export const deleteFile = async (req, res) => {
       targetId: file._id,
       metadata: { name: file.name }
     });
+
+    const io = req.app.get('io');
+    io.to(`workspace:${file.workspaceId}`).emit('file_deleted', { fileId: req.params.id });
+    io.to(`workspace:${file.workspaceId}`).emit('activity_update');
 
     return res.status(200).json({ message: 'File and history deleted.' });
   } catch (error) {

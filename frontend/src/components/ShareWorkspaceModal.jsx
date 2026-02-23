@@ -43,22 +43,22 @@ const ShareWorkspaceModal = ({ workspaceId, workspaceName, members: initialMembe
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2 className="modal-title">Share "{workspaceName}"</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
+    <div className="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="modal w-full max-w-2xl bg-gray-900/80 backdrop-blur-xl border border-gray-700/60 rounded-2xl p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header flex items-center justify-between mb-6 shrink-0">
+          <h2 className="modal-title text-xl md:text-2xl font-semibold font-display tracking-tight text-white pr-4 truncate">Share "{workspaceName}"</h2>
+          <button className="modal-close text-gray-400 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         {/* Share form */}
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="share-row">
-            <div className="form-group" style={{ flex: 1 }}>
-              <label htmlFor="share-email" className="form-label">Invite by email</label>
+        <form onSubmit={handleSubmit} className="modal-form flex flex-col gap-4 mb-8 shrink-0">
+          <div className="share-row flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+            <div className="form-group flex flex-col gap-1.5 flex-1 w-full">
+              <label htmlFor="share-email" className="form-label text-sm font-medium text-gray-300">Invite by email</label>
               <input
                 id="share-email"
                 type="email"
-                className="form-input"
+                className="form-input h-12 w-full px-4 rounded-lg bg-gray-800/60 border border-gray-700/60 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 hover:border-blue-500/40 transition-all"
                 placeholder="colleague@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -67,11 +67,11 @@ const ShareWorkspaceModal = ({ workspaceId, workspaceName, members: initialMembe
               />
             </div>
 
-            <div className="form-group" style={{ minWidth: 140 }}>
-              <label htmlFor="share-role" className="form-label">Role</label>
+            <div className="form-group flex flex-col gap-1.5 w-full sm:w-[140px]">
+              <label htmlFor="share-role" className="form-label text-sm font-medium text-gray-300">Role</label>
               <select
                 id="share-role"
-                className="form-input form-select"
+                className="form-input h-12 w-full px-4 rounded-lg bg-gray-800/60 border border-gray-700/60 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 hover:border-blue-500/40 transition-all appearance-none cursor-pointer"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 disabled={loading}
@@ -82,39 +82,40 @@ const ShareWorkspaceModal = ({ workspaceId, workspaceName, members: initialMembe
               </select>
             </div>
 
-            <div className="form-group" style={{ justifyContent: 'flex-end' }}>
-              <label className="form-label">&nbsp;</label>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? <span className="btn-spinner" /> : 'Invite'}
+            <div className="form-group w-full sm:w-auto mt-2 sm:mt-0">
+              <button type="submit" className="btn bg-blue-500 hover:bg-blue-600 text-white h-12 px-6 rounded-lg font-medium shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 w-full flex items-center justify-center min-w-[100px]" disabled={loading}>
+                {loading ? <span className="btn-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Invite'}
               </button>
             </div>
           </div>
 
-          <p className="role-hint">
+          <p className="role-hint text-sm text-gray-400 ml-1">
             {ROLE_OPTIONS.find((r) => r.value === role)?.desc}
           </p>
         </form>
 
         {/* Members list */}
         {members.length > 0 && (
-          <div className="member-list">
-            <p className="form-label" style={{ marginBottom: 8 }}>
+          <div className="member-list flex-1 overflow-y-auto custom-scrollbar pr-2 border-t border-gray-800/60 pt-6">
+            <h3 className="text-sm font-semibold tracking-wider text-gray-500 uppercase mb-4">
               Members ({members.length})
-            </p>
-            {members.map((m) => (
-              <div key={m._id} className="member-row">
-                <div className="member-info">
-                  <span className="member-avatar">
-                    {m.userId?.username?.[0]?.toUpperCase() || '?'}
-                  </span>
-                  <div>
-                    <p className="member-name">{m.userId?.username}</p>
-                    <p className="member-email">{m.userId?.email}</p>
+            </h3>
+            <div className="flex flex-col gap-2">
+              {members.map((m) => (
+                <div key={m._id} className="member-row flex items-center justify-between p-3 bg-gray-800/20 hover:bg-gray-800/40 border border-gray-800/60 rounded-xl transition-colors">
+                  <div className="member-info flex items-center gap-3">
+                    <span className="member-avatar w-10 h-10 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30 flex items-center justify-center font-bold">
+                      {m.userId?.username?.[0]?.toUpperCase() || '?'}
+                    </span>
+                    <div>
+                      <p className="member-name text-sm font-medium text-gray-200">{m.userId?.username}</p>
+                      <p className="member-email text-xs text-gray-500">{m.userId?.email}</p>
+                    </div>
                   </div>
+                  <span className={`role-badge px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase ${m.role === 'owner' ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : m.role === 'editor' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' : 'bg-gray-500/15 text-gray-400 border border-gray-500/30'}`}>{m.role}</span>
                 </div>
-                <span className={`role-badge ${roleColor(m.role)}`}>{m.role}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>

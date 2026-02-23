@@ -1,7 +1,7 @@
-/* ═══════════════════════════════════════════════
-   CODESYNC — Design System v4
-   Inspired by Linear, Vercel, Render, Grok
-   ═══════════════════════════════════════════════ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ─── Design Tokens ──────────────────────────── */
 :root {

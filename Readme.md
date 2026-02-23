@@ -7,6 +7,26 @@ CodeSync is a high-performance, full-stack collaborative IDE designed for seamle
 
 ---
 
+## 🎨 Modern Developer Aesthetic
+
+The entire CodeSync UI has been completely rebuilt to match modern developer-platform aesthetics (inspired by Linear, Vercel, and Render). 
+
+- **Layered Dark Theme:** Rich deep background (`#0B0C10`) with elevated translucent surfaces and backdrop blur elements.
+- **Premium Typography:** Clean hierarchy using **Space Grotesk** for headings and **Inter** for UI text.
+- **Visual Depth:** Soft shadow elevations, subtle borders, and smooth card hover micro-interactions.
+- **Split-Screen Auth:** Animated hero panel and clean form interface.
+
+### Split-Screen Authentication
+![Login Page](assets/login.png)
+
+### Dashboard & Workspace Management
+![Dashboard](assets/dashboard.png)
+
+### Collaborative IDE & Editor
+![Workspace IDE](assets/workspace.png)
+
+---
+
 ## 🚀 Key Features
 
 ### 🔧 High-Performance Architecture
@@ -17,7 +37,7 @@ CodeSync is a high-performance, full-stack collaborative IDE designed for seamle
 
 ### 💻 Elite Collaboration
 - **Real-time Synchronization**: Powered by Monaco Editor with throttled cursor tracking and debounced code updates.
-- **Activity Feed**: Intelligent sidebar and dashboard feed showing live user joins, file modifications, and role changes.
+- **Activity Feed**: Intelligent sidebar and dashboard panel showing live user joins, file modifications, and role changes.
 - **Universal Sync**: Instant synchronization of file creation, deletion, and renaming across all active clients.
 - **Dynamic Presence**: Live user avatars with role-based ring indicators (Owner/Editor/Viewer).
 
@@ -29,14 +49,12 @@ Generate workspaces in seconds with automated starter templates for 7 core langu
 ### 🛡️ Secure Workspace Governance
 - **Role-Based Access (RBAC)**: Secure permission enforcement (Owner, Editor, Viewer).
 - **Session Control**: Explicit "Leave Session" capability with automatic cleanup and real-time member list updates.
-- **Advanced Auth**: Frictionless entry with auto-focus inputs and secure password visibility toggles.
-- **Dynamic Refresh**: Logo/Title click refetches all workspace data via client-side state without full page reloads.
 
 ---
 
 ## 🛠️ Technical Stack
 
-- **Frontend**: React 18, Vite, Monaco Editor, Tailwind-inspired CSS3, Socket.IO Client.
+- **Frontend**: React 18, Vite, Monaco Editor, CSS3 styling, Socket.IO Client.
 - **Backend**: Node.js, Express, MongoDB (Mongoose), Socket.IO Server, Gzip Compression.
 - **Authentication**: JWT-based secure session management.
 

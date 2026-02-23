@@ -101,11 +101,11 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="explorer-inline-form">
+    <form onSubmit={handleSubmit} className="explorer-inline-form w-full pr-2">
       <input
         autoFocus
         type="text"
-        className="explorer-inline-input"
+        className="explorer-inline-input w-full bg-gray-900/60 border border-blue-500/50 text-white rounded text-sm px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500/50"
         placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -209,45 +209,47 @@ const TreeNode = ({
     return (
       <div className="tree-folder" style={{ paddingLeft: `${level * 12}px` }}>
         <div
-          className="explorer-item explorer-folder"
+          className="explorer-item explorer-folder group flex items-center justify-between py-1.5 px-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded-md cursor-pointer transition select-none mx-1"
           onClick={() => setExpanded((v) => !v)}
         >
-          <span className="folder-arrow">{expanded ? "▾" : "▸"}</span>
-          <span className="folder-icon">📁</span>
-          {renaming ? (
-            <InlineInput
-              placeholder={node.name}
-              onSubmit={handleRename}
-              onCancel={() => setRenaming(false)}
-            />
-          ) : (
-            <span className="file-name">{node.name}</span>
-          )}
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            <span className="folder-arrow text-gray-500 w-4 text-center">{expanded ? "▾" : "▸"}</span>
+            <span className="folder-icon text-blue-400 opacity-80">📁</span>
+            {renaming ? (
+              <InlineInput
+                placeholder={node.name}
+                onSubmit={handleRename}
+                onCancel={() => setRenaming(false)}
+              />
+            ) : (
+              <span className="file-name truncate">{node.name}</span>
+            )}
+          </div>
           {canEdit && !renaming && (
-            <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+            <div className="item-actions hidden group-hover:flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
               <button
-                className="btn-icon-tiny"
+                className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
                 title="New file"
                 onClick={() => setCreating("file")}
               >
                 +F
               </button>
               <button
-                className="btn-icon-tiny"
+                className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
                 title="New folder"
                 onClick={() => setCreating("folder")}
               >
                 +D
               </button>
               <button
-                className="btn-icon-tiny"
+                className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
                 title="Rename"
                 onClick={() => setRenaming(true)}
               >
                 ✎
               </button>
               <button
-                className="btn-icon-tiny btn-delete-tiny"
+                className="btn-icon-tiny btn-delete-tiny text-gray-400 hover:text-red-400 px-1 py-0.5 rounded hover:bg-red-500/10 transition"
                 title="Delete"
                 onClick={handleDelete}
               >
@@ -299,24 +301,26 @@ const TreeNode = ({
   // File node
   return (
     <div
-      className={`explorer-item ${activeFileId === node._id ? "active" : ""}`}
-      style={{ paddingLeft: `${level * 12 + 8}px` }}
+      className={`explorer-item group flex items-center justify-between py-1.5 px-2 text-sm rounded-md cursor-pointer transition select-none mx-1 ${activeFileId === node._id ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-white/5 hover:text-white"}`}
+      style={{ paddingLeft: `${level * 12 + 20}px` }}
       onClick={() => onFileSelect(node._id)}
     >
-      <span className="file-icon">{getIcon(node.name, node.type)}</span>
-      {renaming ? (
-        <InlineInput
-          placeholder={node.name}
-          onSubmit={handleRename}
-          onCancel={() => setRenaming(false)}
-        />
-      ) : (
-        <span className="file-name">{node.name}</span>
-      )}
+      <div className="flex items-center gap-2 overflow-hidden">
+        <span className="file-icon opacity-80 w-4 text-center">{getIcon(node.name, node.type)}</span>
+        {renaming ? (
+          <InlineInput
+            placeholder={node.name}
+            onSubmit={handleRename}
+            onCancel={() => setRenaming(false)}
+          />
+        ) : (
+          <span className="file-name truncate">{node.name}</span>
+        )}
+      </div>
       {canEdit && !renaming && (
-        <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+        <div className="item-actions hidden group-hover:flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
           <button
-            className="btn-icon-tiny"
+            className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
             title="Rename"
             onClick={(e) => {
               e.stopPropagation();
@@ -326,7 +330,7 @@ const TreeNode = ({
             ✎
           </button>
           <button
-            className="btn-icon-tiny btn-delete-tiny"
+            className="btn-icon-tiny btn-delete-tiny text-gray-400 hover:text-red-400 px-1 py-0.5 rounded hover:bg-red-500/10 transition"
             title="Delete"
             onClick={handleDelete}
           >
@@ -385,20 +389,20 @@ const FileExplorer = ({
   };
 
   return (
-    <div className="file-explorer">
-      <div className="explorer-header">
-        <span className="explorer-title">FILES</span>
+    <div className="file-explorer w-64 bg-gray-900/60 backdrop-blur-md border-r border-gray-800/60 flex flex-col shrink-0 text-gray-300">
+      <div className="explorer-header flex items-center justify-between px-4 py-3 border-b border-gray-800/60 mb-2">
+        <span className="explorer-title text-xs font-semibold tracking-wider text-gray-500 uppercase">FILES</span>
         {canEdit && (
-          <div className="explorer-header-actions">
+          <div className="explorer-header-actions flex items-center gap-1">
             <button
-              className="btn-icon"
+              className="btn-icon w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white transition"
               title="New File"
               onClick={() => setCreatingRoot("file")}
             >
               +F
             </button>
             <button
-              className="btn-icon"
+              className="btn-icon w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white transition"
               title="New Folder"
               onClick={() => setCreatingRoot("folder")}
             >
@@ -408,24 +412,28 @@ const FileExplorer = ({
         )}
       </div>
 
-      <div className="explorer-list">
+      <div className="explorer-list flex-1 overflow-y-auto pb-4 custom-scrollbar">
         {creatingRoot === "file" && (
-          <InlineInput
-            placeholder="filename.js"
-            onSubmit={(name) => handleRootCreate("file", name)}
-            onCancel={() => setCreatingRoot(null)}
-          />
+          <div className="px-3 mb-1">
+            <InlineInput
+              placeholder="filename.js"
+              onSubmit={(name) => handleRootCreate("file", name)}
+              onCancel={() => setCreatingRoot(null)}
+            />
+          </div>
         )}
         {creatingRoot === "folder" && (
-          <InlineInput
-            placeholder="folder-name"
-            onSubmit={(name) => handleRootCreate("folder", name)}
-            onCancel={() => setCreatingRoot(null)}
-          />
+          <div className="px-3 mb-1">
+            <InlineInput
+              placeholder="folder-name"
+              onSubmit={(name) => handleRootCreate("folder", name)}
+              onCancel={() => setCreatingRoot(null)}
+            />
+          </div>
         )}
 
         {files.length === 0 && !creatingRoot && (
-          <p className="explorer-empty">
+          <p className="explorer-empty text-sm text-gray-500 text-center p-6 italic">
             No files yet. Create one to start coding.
           </p>
         )}

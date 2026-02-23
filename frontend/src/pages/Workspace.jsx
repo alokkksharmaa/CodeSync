@@ -226,19 +226,19 @@ const Workspace = () => {
   );
 
   return (
-    <div className="workspace-page">
-      <header className="ws-topbar">
-        <div className="ws-topbar-left">
+    <div className="workspace-page flex flex-col h-screen bg-[#0B0C10] overflow-hidden">
+      <header className="ws-topbar flex items-center justify-between px-4 sm:px-6 h-16 bg-gray-900/40 backdrop-blur-xl border-b border-gray-800/60 shrink-0 z-20">
+        <div className="ws-topbar-left flex items-center gap-4">
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg transition"
             onClick={() => navigate('/dashboard')}
             title="Back to dashboard"
           >
             ←
           </button>
-          <div className="ws-breadcrumb">
+          <div className="ws-breadcrumb flex items-center gap-2">
             <span
-              className="ws-breadcrumb-ws"
+              className="ws-breadcrumb-ws font-display text-lg font-semibold text-gray-200 hover:text-blue-400 cursor-pointer transition-colors"
               onClick={handleRefresh}
               title="Click to refresh"
             >
@@ -246,19 +246,19 @@ const Workspace = () => {
             </span>
             {activeFile && (
               <>
-                <span className="ws-breadcrumb-sep">/</span>
-                <span className="ws-breadcrumb-file">{activeFile.name}</span>
+                <span className="ws-breadcrumb-sep text-gray-600">/</span>
+                <span className="ws-breadcrumb-file text-gray-400 font-medium">{activeFile.name}</span>
               </>
             )}
           </div>
         </div>
 
-        <div className="ws-topbar-right">
-          <div className="presence-row">
+        <div className="ws-topbar-right flex items-center gap-4">
+          <div className="presence-row flex items-center -space-x-2">
             {connectedUsers.map((u, i) => (
               <span
                 key={i}
-                className={`presence-avatar ${u.role === 'owner' ? 'ring-owner' : ''}`}
+                className={`presence-avatar w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-[#0B0C10] shadow-sm ${u.role === 'owner' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}
                 title={`${u.username} (${u.role})`}
               >
                 {u.username[0].toUpperCase()}
@@ -266,46 +266,46 @@ const Workspace = () => {
             ))}
           </div>
 
-          {connectedUsers.length > 0 && <span className="topbar-divider" />}
+          {connectedUsers.length > 0 && <span className="topbar-divider w-px h-6 bg-gray-700/60" />}
 
-          <span className={`role-badge ${myRole === 'owner' ? 'badge-owner' : myRole === 'editor' ? 'badge-editor' : 'badge-viewer'}`}>
+          <span className={`role-badge px-2.5 py-1 rounded-full text-xs font-semibold ${myRole === 'owner' ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30' : myRole === 'editor' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' : 'bg-gray-500/15 text-gray-400 border border-gray-500/30'}`}>
             {myRole}
           </span>
 
-          <span className="topbar-divider" />
+          <span className="topbar-divider w-px h-6 bg-gray-700/60" />
 
-          <div className="topbar-actions">
+          <div className="topbar-actions flex items-center gap-1.5">
             <button
-              className={`btn btn-ghost btn-sm ${showActivity ? 'active' : ''}`}
+              className={`btn px-3 py-1.5 rounded-lg text-sm font-medium transition ${showActivity ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
               onClick={() => { setShowMembers(false); setShowHistory(false); setShowActivity(!showActivity); }}
             >
               Activity
             </button>
             <button
-              className={`btn btn-ghost btn-sm ${showHistory ? 'active' : ''}`}
+              className={`btn px-3 py-1.5 rounded-lg text-sm font-medium transition ${showHistory ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
               onClick={() => { setShowMembers(false); setShowActivity(false); setShowHistory(!showHistory); }}
             >
               History
             </button>
             <button
-              className={`btn btn-ghost btn-sm ${showMembers ? 'active' : ''}`}
+              className={`btn px-3 py-1.5 rounded-lg text-sm font-medium transition ${showMembers ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
               onClick={() => { setShowHistory(false); setShowActivity(false); setShowMembers(!showMembers); }}
             >
               Members
             </button>
             {isOwner && (
-              <button className="btn btn-primary btn-sm" onClick={() => setShowInvite(true)}>
+              <button className="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/10 transition hover:-translate-y-0.5 ml-1" onClick={() => setShowInvite(true)}>
                 Invite
               </button>
             )}
-            <button className="btn btn-ghost btn-sm btn-error" onClick={handleLeaveSession}>
+            <button className="btn px-3 py-1.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-500/10 transition ml-1" onClick={handleLeaveSession}>
               Leave
             </button>
           </div>
         </div>
       </header>
 
-      <div className="workspace-layout">
+      <div className="workspace-layout flex-1 flex overflow-hidden">
         <FileExplorer
           workspaceId={workspaceId}
           socket={socketRef.current}
@@ -316,19 +316,20 @@ const Workspace = () => {
           canEdit={canEdit}
         />
 
-        <div className="editor-container">
+        <div className="editor-container flex-1 flex flex-col relative bg-[#0B0C10]">
           {myRole === 'viewer' && (
-            <div className="viewer-banner">
+            <div className="viewer-banner bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-sm py-2 px-4 flex items-center justify-center gap-2 backdrop-blur-md sticky top-0 z-10 font-medium">
               👁 Read-only access — contact the owner to request edit permissions.
             </div>
           )}
           {!activeFileId ? (
-            <div className="no-file-selected">
-              Select a file to start coding
+            <div className="no-file-selected flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
+              <span className="text-5xl opacity-40 mb-4">📄</span>
+              <p className="text-lg">Select a file to start coding</p>
             </div>
           ) : (
             <textarea
-              className="code-editor"
+              className="code-editor flex-1 w-full bg-transparent text-gray-300 font-mono text-base leading-relaxed p-6 resize-none focus:outline-none placeholder-gray-700/50"
               value={code}
               onChange={handleCodeChange}
               readOnly={!canEdit}

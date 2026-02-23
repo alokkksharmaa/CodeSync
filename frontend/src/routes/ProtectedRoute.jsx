@@ -10,8 +10,8 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="loading-screen">
-        <div className="spinner" />
+      <div className="fixed inset-0 bg-[#0B0C10] flex items-center justify-center z-50">
+        <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
       </div>
     )
   }

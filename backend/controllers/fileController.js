@@ -2,8 +2,6 @@ import File from '../models/File.js';
 import FileVersion from '../models/FileVersion.js';
 import { logActivity } from '../utils/logger.js';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 /**
  * Normalize a file/folder name:
  * - trim whitespace

@@ -15,7 +15,7 @@ const workspaceSchema = new mongoose.Schema(
     },
     language: {
       type: String,
-      enum: ['javascript', 'typescript', 'python', 'java', 'cpp', 'go', 'rust', 'html', 'css', 'json'],
+      enum: ['javascript', 'typescript', 'python', 'java', 'cpp', 'go', 'rust', 'html', 'css', 'json', 'txt'],
       default: 'javascript',
     },
   },

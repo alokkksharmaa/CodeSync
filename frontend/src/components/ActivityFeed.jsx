@@ -37,33 +37,35 @@ const ActivityFeed = ({ socket, workspaceId }) => {
     new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="activity-feed-panel">
-      <div className="panel-header">
-        <span className="panel-title">Activity</span>
+    <div className="activity-feed-panel w-72 bg-gray-900/60 backdrop-blur-md border-l border-gray-800/60 flex flex-col shrink-0 text-gray-300">
+      <div className="panel-header flex items-center justify-between px-4 py-3 border-b border-gray-800/60 mb-2">
+        <span className="panel-title text-xs font-semibold tracking-wider text-gray-500 uppercase">Activity</span>
       </div>
-      <div className="panel-list">
+      <div className="panel-list flex-1 overflow-y-auto p-2 custom-scrollbar">
         {loading ? (
-          <div style={{ padding: '12px 16px' }}>
-            {[1, 2, 3].map(i => <div key={i} className="skeleton skeleton-activity" />)}
+          <div className="p-3">
+            {[1, 2, 3].map(i => <div key={i} className="skeleton skeleton-activity h-10 w-full mb-2 rounded bg-white/5" />)}
           </div>
         ) : activities.length === 0 ? (
-          <p className="activity-empty">No recent activity</p>
+          <p className="activity-empty text-sm text-gray-500 text-center p-6 italic">No recent activity</p>
         ) : (
-          <div className="activity-list">
+          <div className="activity-list flex flex-col gap-1.5">
             {activities.map((act, i) => {
               const def = ACTION_LABELS[act.actionType] || { verb: 'acted', icon: '·' }
               return (
-                <div key={i} className="activity-item">
-                  <span className="activity-time">{formatTime(act.createdAt)}</span>
-                  <div className="activity-content">
-                    <span style={{ marginRight: '4px', opacity: 0.6 }}>{def.icon}</span>
-                    <strong>{act.metadata?.username || 'User'}</strong>{' '}
-                    {def.verb}
-                    {act.metadata?.name ? (
-                      <span style={{ color: 'var(--text-muted)', marginLeft: '3px', fontFamily: 'monospace', fontSize: '11px' }}>
-                        {act.metadata.name}
-                      </span>
-                    ) : null}
+                <div key={i} className="activity-item flex flex-col p-2 hover:bg-white/5 rounded-lg transition group">
+                  <span className="activity-time text-xs text-gray-500 mb-1 font-medium">{formatTime(act.createdAt)}</span>
+                  <div className="activity-content text-sm text-gray-300 flex items-start gap-2 leading-tight">
+                    <span className="mt-0.5 text-gray-400 opacity-80">{def.icon}</span>
+                    <div className="flex-1">
+                      <strong className="font-semibold text-gray-200">{act.metadata?.username || 'User'}</strong>{' '}
+                      <span className="text-gray-400">{def.verb}</span>
+                      {act.metadata?.name ? (
+                        <span className="text-blue-400/80 ml-1 font-mono text-xs bg-blue-500/10 px-1 rounded break-all">
+                          {act.metadata.name}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               )

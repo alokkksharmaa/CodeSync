@@ -159,7 +159,7 @@ const Signup = () => {
 
             <button
               type="submit"
-              className={`btn bg-blue-500 hover:bg-blue-600 text-white w-full h-12 mt-2 rounded-lg font-medium shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 flex items-center justify-center ${loading ? 'opacity-80 pointer-events-none' : ''}`}
+              className={`btn btn-primary w-full h-12 mt-2 rounded-lg text-lg font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center ${loading ? 'opacity-80 pointer-events-none' : ''}`}
               disabled={loading}
             >
               {loading ? <span className="btn-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Create account'}

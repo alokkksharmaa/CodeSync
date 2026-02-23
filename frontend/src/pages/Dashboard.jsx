@@ -153,14 +153,16 @@ const Sidebar = ({ user, workspaceCount, activeTab, onTabChange, onLogout, onRef
 
     <div className="sidebar-footer p-4 border-t border-gray-700/60 bg-gray-900/40">
       <div className="sidebar-user flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition mb-2">
-        <div className="sidebar-avatar w-10 h-10 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30 flex items-center justify-center font-bold text-lg">{user?.username?.[0]?.toUpperCase()}</div>
+        <div className="sidebar-avatar w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', border: '1px solid var(--accent-glow)' }}>
+          {user?.username?.[0]?.toUpperCase()}
+        </div>
         <div className="sidebar-user-info flex-1 overflow-hidden">
-          <div className="sidebar-username text-sm font-semibold text-gray-200 truncate">@{user?.username}</div>
-          <div className="sidebar-user-role text-xs text-gray-500 truncate">{user?.email}</div>
+          <div className="sidebar-username text-sm font-semibold text-white truncate">@{user?.username}</div>
+          <div className="sidebar-user-role text-xs text-gray-400 truncate">{user?.email}</div>
         </div>
       </div>
       <button
-        className="btn w-full flex items-center justify-start gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition"
+        className="btn btn-ghost btn-error w-full flex items-center justify-start gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition"
         onClick={onLogout}
       >
         Sign out
@@ -236,7 +238,7 @@ const Dashboard = () => {
               {!loading && `${shown.length} workspace${shown.length !== 1 ? 's' : ''}`}
             </p>
           </div>
-          <button className="btn bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5" onClick={() => setShowCreate(true)}>
+          <button className="btn btn-primary px-5 py-2.5 rounded-lg shadow-lg transition-all hover:-translate-y-0.5" onClick={() => setShowCreate(true)}>
             + New Workspace
           </button>
         </div>
@@ -261,7 +263,7 @@ const Dashboard = () => {
                       : "No workspaces have been shared with you."}
                   </p>
                   {activeTab === 'my' && (
-                    <button className="btn bg-white/5 hover:bg-white/10 text-gray-200 border border-gray-700 px-4 py-2 rounded-lg font-medium transition" onClick={() => setShowCreate(true)}>
+                    <button className="btn btn-secondary px-4 py-2 rounded-lg transition" onClick={() => setShowCreate(true)}>
                       Create workspace
                     </button>
                   )}

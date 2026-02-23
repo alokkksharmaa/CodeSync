@@ -86,7 +86,7 @@ const Signup = () => {
 
       {/* ─── Right: Form ─── */}
       <div className="auth-form-panel flex-1 flex items-center justify-center p-8 bg-[#0B0C10] relative z-10 w-full lg:w-1/2 border-l border-gray-800">
-        <div className="auth-card w-full max-w-md bg-gray-900/40 p-10 rounded-2xl border border-gray-800/60 shadow-2xl backdrop-blur-xl">
+        <div className="auth-card">
           <div className="auth-header mb-8 text-center max-w-sm mx-auto">
             <div className="auth-mobile-brand flex items-center justify-center gap-2 mb-6 md:hidden">
               <span className="text-yellow-400 text-xl">⚡🧑🏻‍💻</span>

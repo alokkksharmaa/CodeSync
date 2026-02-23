@@ -3,7 +3,6 @@
 CodeSync is a high-performance, full-stack collaborative IDE designed for seamless real-time teamwork. Build, share, and collaborate on code with instant synchronization, live activity monitoring, and enterprise-grade performance.
 
 ![CodeSync Version](https://img.shields.io/badge/Version-3.0_Turbo-blueviolet?style=for-the-badge)
-![CodeSync Stack](https://img.shields.io/badge/Stack-MERN%20+%20Socket.IO%20+%20)
 
 ---
 

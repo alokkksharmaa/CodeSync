@@ -6,12 +6,17 @@ import { useAuth } from '../context/AuthContext';
 import { fetchWorkspace } from '../services/workspaceApi';
 import api from '../services/api'; // Added for leaveSession
 import { fetchFileContent } from '../services/fileApi';
+import { executeCode } from '../services/codeExecutionApi';
 import FileExplorer from '../components/FileExplorer';
 import VersionHistory from '../components/VersionHistory';
 import MembersPanel from '../components/MembersPanel';
 import InviteModal from '../components/InviteModal';
 import ActivityFeed from '../components/ActivityFeed';
 import CommentsPanel from '../components/CommentsPanel';
+import CodeEditor from '../components/CodeEditor';
+import CodeExecutionPanel from '../components/CodeExecutionPanel';
+import VoiceInput from '../components/VoiceInput';
+import VoiceChat from '../components/VoiceChat';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -37,10 +42,14 @@ const Workspace = () => {
   const [showComments, setShowComments] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [executionOutput, setExecutionOutput] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const socketRef = useRef(null);
   const colorRef = useRef(randomColor());
   const isRemoteChange = useRef(false);
+  const previousFileRef = useRef(null);
+  const currentCodeRef = useRef('');
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
@@ -76,13 +85,37 @@ const Workspace = () => {
 
     const openFile = async () => {
       try {
+        console.log('[Workspace] Switching to file:', activeFileId);
+        
+        // Save previous file immediately before switching
+        if (previousFileRef.current && previousFileRef.current !== activeFileId && currentCodeRef.current !== undefined) {
+          console.log('[Workspace] Saving previous file:', previousFileRef.current, 'with', currentCodeRef.current.length, 'chars');
+          
+          // Immediate save to database
+          try {
+            await api.put(`/api/files/${previousFileRef.current}`, { content: currentCodeRef.current });
+            console.log('[Workspace] Previous file saved successfully');
+          } catch (saveErr) {
+            console.error('[Workspace] Failed to save previous file:', saveErr);
+          }
+        }
+        
+        // Load new file
         const file = await fetchFileContent(activeFileId);
-        setCode(file.content);
+        
+        // Update refs
+        previousFileRef.current = activeFileId;
+        currentCodeRef.current = file.content || '';
+        
+        // Mark as remote change to prevent socket emission
+        isRemoteChange.current = true;
+        setCode(file.content || '');
         
         if (socketRef.current) {
           socketRef.current.emit('join_file', { fileId: activeFileId });
         }
       } catch (err) {
+        console.error('[Workspace] Failed to load file:', err);
         toast.error('Failed to load file content');
       }
     };
@@ -124,11 +157,29 @@ const Workspace = () => {
     });
 
     socket.on('file_created', (newFile) => {
-      setFiles(prev => prev.find(f => f._id === newFile._id) ? prev : [...prev, newFile]);
+      setFiles(prev => {
+        // Check if file already exists by ID
+        const exists = prev.some(f => String(f._id) === String(newFile._id));
+        if (exists) {
+          console.log('[socket] file_created: File already exists, skipping', newFile._id);
+          return prev;
+        }
+        console.log('[socket] file_created: Adding new file', newFile._id);
+        return [...prev, newFile];
+      });
     });
 
     socket.on('folder_created', (newFolder) => {
-      setFiles(prev => prev.find(f => f._id === newFolder._id) ? prev : [...prev, newFolder]);
+      setFiles(prev => {
+        // Check if folder already exists by ID
+        const exists = prev.some(f => String(f._id) === String(newFolder._id));
+        if (exists) {
+          console.log('[socket] folder_created: Folder already exists, skipping', newFolder._id);
+          return prev;
+        }
+        console.log('[socket] folder_created: Adding new folder', newFolder._id);
+        return [...prev, newFolder];
+      });
     });
 
     socket.on('file_deleted', ({ fileId, deletedIds }) => {
@@ -180,7 +231,15 @@ const Workspace = () => {
   const handleCodeChange = useCallback(
     (e) => {
       const newCode = e.target.value;
+      console.log('[Workspace] handleCodeChange:', {
+        fileId: activeFileId,
+        codeLength: newCode?.length,
+        isRemote: isRemoteChange.current,
+        myRole
+      });
+      
       setCode(newCode);
+      currentCodeRef.current = newCode; // Update ref for saving
 
       if (isRemoteChange.current) {
         isRemoteChange.current = false;
@@ -189,7 +248,7 @@ const Workspace = () => {
 
       if (myRole === 'viewer') return;
 
-      if (socketRef.current) {
+      if (socketRef.current && activeFileId) {
         socketRef.current.emit('code_change', {
           fileId: activeFileId,
           code: newCode,
@@ -213,9 +272,52 @@ const Workspace = () => {
     }
   };
 
+  const handleExecuteCode = async () => {
+    if (!code.trim()) {
+      toast.error('No code to execute');
+      return;
+    }
+
+    setIsExecuting(true);
+    setExecutionOutput('');
+
+    try {
+      const result = await executeCode(code, activeFile?.language || 'javascript');
+      
+      if (result.error) {
+        setExecutionOutput(`❌ Error:\n${result.error}`);
+        toast.error('Execution failed');
+      } else {
+        setExecutionOutput(result.output || '✅ Code executed successfully (no output)');
+        toast.success('Code executed');
+      }
+    } catch (err) {
+      setExecutionOutput(`❌ Execution Error:\n${err.message}`);
+      toast.error(err.message);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   const activeFile = files.find(f => f._id === activeFileId);
   const canEdit = myRole === 'owner' || myRole === 'editor';
   const isOwner = myRole === 'owner';
+
+  const handleVoiceTranscript = useCallback((transcript) => {
+    if (!canEdit || !activeFileId) return;
+    
+    const newCode = code + transcript + ' ';
+    setCode(newCode);
+    currentCodeRef.current = newCode;
+
+    if (socketRef.current && activeFileId) {
+      socketRef.current.emit('code_change', {
+        fileId: activeFileId,
+        code: newCode,
+        userId: user?.id,
+      });
+    }
+  }, [code, canEdit, activeFileId, user]);
 
   if (loading) return (
     <div className="workspace-page">
@@ -276,7 +378,32 @@ const Workspace = () => {
 
           <span className="topbar-divider w-px h-6 bg-gray-700/60" />
 
+          <VoiceChat 
+            socket={socketRef.current}
+            workspaceId={workspaceId}
+            userId={user?.id}
+            username={user?.username}
+          />
+
+          <span className="topbar-divider w-px h-6 bg-gray-700/60" />
+
           <div className="topbar-actions flex items-center gap-1.5">
+            {activeFileId && canEdit && (
+              <>
+                <VoiceInput 
+                  onTranscript={handleVoiceTranscript}
+                  disabled={!canEdit || !activeFileId}
+                />
+                <button
+                  className="btn btn-primary px-4 py-1.5 rounded-lg text-sm transition flex items-center gap-2"
+                  onClick={handleExecuteCode}
+                  disabled={isExecuting}
+                >
+                  {isExecuting ? '⚙️ Running...' : '▶️ Run'}
+                </button>
+                <span className="topbar-divider w-px h-6 bg-gray-700/60" />
+              </>
+            )}
             <button
               className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition ${showComments ? 'active' : ''}`}
               onClick={() => { setShowMembers(false); setShowHistory(false); setShowActivity(false); setShowComments(!showComments); }}
@@ -336,17 +463,25 @@ const Workspace = () => {
               <p className="text-lg">Select a file to start coding</p>
             </div>
           ) : (
-            <textarea
-              className="code-editor flex-1 w-full bg-transparent text-gray-300 font-mono text-base leading-relaxed p-6 resize-none focus:outline-none placeholder-gray-700/50"
-              value={code}
-              onChange={handleCodeChange}
-              readOnly={!canEdit}
-              spellCheck={false}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              placeholder={`// Coding in ${activeFile?.language}...`}
-            />
+            <>
+              <div className="flex-1 overflow-hidden">
+                <CodeEditor
+                  value={code}
+                  onChange={handleCodeChange}
+                  language={activeFile?.language || 'javascript'}
+                  readOnly={!canEdit}
+                  onExecute={canEdit ? handleExecuteCode : null}
+                  isExecuting={isExecuting}
+                />
+              </div>
+              {activeFileId && (
+                <CodeExecutionPanel
+                  output={executionOutput}
+                  isExecuting={isExecuting}
+                  onClear={() => setExecutionOutput('')}
+                />
+              )}
+            </>
           )}
         </div>
 

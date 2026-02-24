@@ -8,19 +8,29 @@ const ACTION_LABELS = {
   FILE_UPDATED: { verb: 'edited', icon: '✏️' },
   FOLDER_CREATED: { verb: 'created folder', icon: '📁' },
   FOLDER_DELETED: { verb: 'deleted folder', icon: '📁' },
-  USER_JOINED:  { verb: 'joined', icon: '→' },
-  USER_LEFT:    { verb: 'left', icon: '←' },
+  USER_JOINED:  { verb: 'joined the workspace', icon: '👋' },
+  USER_LEFT:    { verb: 'left the workspace', icon: '👋' },
+  USER_INVITED: { verb: 'invited', icon: '✉️' },
+  MEMBER_REMOVED: { verb: 'removed', icon: '🚫' },
+  ROLE_CHANGED: { verb: 'changed role for', icon: '🔄' },
 }
 
 const ActivityFeed = ({ socket, workspaceId }) => {
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
 
+  console.log('[ActivityFeed] Render - workspaceId:', workspaceId, 'activities count:', activities.length, 'loading:', loading);
+
   const loadActivities = async () => {
     try {
+      console.log('[ActivityFeed] Loading activities for workspace:', workspaceId);
       const res = await api.get(`/api/workspaces/${workspaceId}/activity`)
+      console.log('[ActivityFeed] Received activities:', res.data);
+      console.log('[ActivityFeed] Activities count:', res.data?.length);
       setActivities(res.data)
-    } catch { /* silent */ }
+    } catch (error) { 
+      console.error('[ActivityFeed] Error loading activities:', error);
+    }
     finally { setLoading(false) }
   }
 
@@ -52,17 +62,43 @@ const ActivityFeed = ({ socket, workspaceId }) => {
           <div className="activity-list flex flex-col gap-1.5">
             {activities.map((act, i) => {
               const def = ACTION_LABELS[act.actionType] || { verb: 'acted', icon: '·' }
+              const isMemberActivity = ['USER_JOINED', 'USER_LEFT'].includes(act.actionType)
+              const isInviteActivity = act.actionType === 'USER_INVITED'
+              const isRoleChangeActivity = act.actionType === 'ROLE_CHANGED'
+              const isMemberRemovedActivity = act.actionType === 'MEMBER_REMOVED'
+              
               return (
-                <div key={i} className="activity-item flex flex-col p-2 hover:bg-white/5 rounded-lg transition group">
+                <div key={act._id || i} className="activity-item flex flex-col p-2 hover:bg-white/5 rounded-lg transition group">
                   <span className="activity-time text-xs text-gray-500 mb-1 font-medium">{formatTime(act.createdAt)}</span>
                   <div className="activity-content text-sm text-gray-300 flex items-start gap-2 leading-tight">
                     <span className="mt-0.5 text-gray-400 opacity-80">{def.icon}</span>
                     <div className="flex-1">
                       <strong className="font-semibold text-gray-200">{act.metadata?.username || 'User'}</strong>{' '}
                       <span className="text-gray-400">{def.verb}</span>
-                      {act.metadata?.name ? (
+                      {isInviteActivity && act.metadata?.invitedUsername ? (
+                        <span className="text-blue-400/80 ml-1">
+                          {act.metadata.invitedUsername}
+                        </span>
+                      ) : null}
+                      {isRoleChangeActivity && act.metadata?.targetUsername ? (
+                        <>
+                          <span className="text-blue-400/80 ml-1">{act.metadata.targetUsername}</span>
+                          <span className="text-gray-500 ml-1 text-xs">
+                            ({act.metadata.oldRole} → {act.metadata.newRole})
+                          </span>
+                        </>
+                      ) : null}
+                      {isMemberRemovedActivity && act.metadata?.removedUsername ? (
+                        <span className="text-red-400/80 ml-1">{act.metadata.removedUsername}</span>
+                      ) : null}
+                      {!isMemberActivity && !isInviteActivity && !isRoleChangeActivity && !isMemberRemovedActivity && act.metadata?.name ? (
                         <span className="text-blue-400/80 ml-1 font-mono text-xs bg-blue-500/10 px-1 rounded break-all">
                           {act.metadata.name}
+                        </span>
+                      ) : null}
+                      {act.metadata?.role && act.actionType === 'USER_JOINED' ? (
+                        <span className="text-green-400/80 ml-1 text-xs">
+                          as {act.metadata.role}
                         </span>
                       ) : null}
                     </div>

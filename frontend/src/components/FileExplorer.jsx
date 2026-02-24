@@ -75,17 +75,19 @@ const buildTree = (files) => {
 const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
   const [value, setValue] = useState("");
   const submitting = useRef(false);
+  const hasSubmitted = useRef(false);
 
   const handleSubmit = useCallback(
     async (e) => {
       e?.preventDefault();
-      if (submitting.current) return; // debounce: prevent double-fire
+      if (submitting.current || hasSubmitted.current) return; // prevent double-fire
       const name = value.trim();
       if (!name) {
         onCancel();
         return;
       }
       submitting.current = true;
+      hasSubmitted.current = true;
       await onSubmit(name);
       submitting.current = false;
     },
@@ -100,6 +102,13 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
     if (e.key === "Escape") onCancel();
   };
 
+  const handleBlur = () => {
+    // Only cancel if we haven't submitted yet
+    if (!submitting.current && !hasSubmitted.current) {
+      onCancel();
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="explorer-inline-form w-full pr-2">
       <input
@@ -109,9 +118,7 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
         placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={() => {
-          if (!submitting.current) onCancel();
-        }}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
       />
     </form>
@@ -140,7 +147,8 @@ const TreeNode = ({
   const handleCreateFile = async (name) => {
     try {
       const newFile = await createFile({ workspaceId, name, path: folderPath });
-      onFilesChange((prev) => [...prev, newFile]);
+      // Don't add to state here - let socket handle it to avoid duplicates
+      // onFilesChange((prev) => [...prev, newFile]);
       onFileSelect(newFile._id);
       toast.success(`Created ${name}`);
     } catch (err) {
@@ -158,7 +166,8 @@ const TreeNode = ({
         name,
         path: folderPath,
       });
-      onFilesChange((prev) => [...prev, newFolder]);
+      // Don't add to state here - let socket handle it to avoid duplicates
+      // onFilesChange((prev) => [...prev, newFolder]);
       toast.success(`Created folder ${name}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create folder");
@@ -371,12 +380,14 @@ const FileExplorer = ({
     try {
       if (type === "file") {
         const newFile = await createFile({ workspaceId, name, path: "/" });
-        onFilesChange((prev) => [...prev, newFile]);
+        // Don't add to state here - let socket handle it to avoid duplicates
+        // onFilesChange((prev) => [...prev, newFile]);
         onFileSelect(newFile._id);
         toast.success(`Created ${name}`);
       } else {
         const newFolder = await createFolder({ workspaceId, name, path: "/" });
-        onFilesChange((prev) => [...prev, newFolder]);
+        // Don't add to state here - let socket handle it to avoid duplicates
+        // onFilesChange((prev) => [...prev, newFolder]);
         toast.success(`Created folder ${name}`);
       }
     } catch (err) {

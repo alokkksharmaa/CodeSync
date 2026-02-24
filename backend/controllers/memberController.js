@@ -44,13 +44,36 @@ export const inviteMember = async (req, res) => {
       invitedBy: req.user.id
     });
 
+    // Get inviter's username
+    const inviter = await User.findById(req.user.id).select('username');
+
     logActivity({
       workspaceId,
       userId: req.user.id,
       actionType: 'USER_INVITED',
       targetId: targetUser._id,
-      metadata: { role, email: targetUser.email }
+      metadata: { 
+        role, 
+        email: targetUser.email,
+        username: inviter?.username || 'Unknown',
+        invitedUsername: targetUser.username
+      }
     });
+
+    // Log that the user joined the workspace
+    logActivity({
+      workspaceId,
+      userId: targetUser._id,
+      actionType: 'USER_JOINED',
+      targetId: targetUser._id,
+      metadata: { username: targetUser.username, role }
+    });
+
+    // Notify all clients of activity update
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`workspace:${workspaceId}`).emit('activity_update');
+    }
 
     return res.status(201).json({
       message: `User ${targetUser.username} invited successfully.`,
@@ -84,7 +107,7 @@ export const updateMemberRole = async (req, res) => {
       return res.status(400).json({ message: 'Invalid role.' });
     }
 
-    const membership = await WorkspaceMember.findOne({ workspaceId, userId });
+    const membership = await WorkspaceMember.findOne({ workspaceId, userId }).populate('userId', 'username');
     if (!membership) {
       return res.status(404).json({ message: 'Member not found.' });
     }
@@ -94,6 +117,7 @@ export const updateMemberRole = async (req, res) => {
     }
 
     const oldRole = membership.role;
+    const targetUsername = membership.userId.username;
     membership.role = role;
     await membership.save();
 
@@ -102,7 +126,7 @@ export const updateMemberRole = async (req, res) => {
       userId: req.user.id,
       actionType: 'ROLE_CHANGED',
       targetId: userId,
-      metadata: { oldRole, newRole: role }
+      metadata: { oldRole, newRole: role, targetUsername }
     });
 
     // Notify user via Socket.IO
@@ -113,6 +137,7 @@ export const updateMemberRole = async (req, res) => {
         role,
         oldRole
       });
+      io.to(`workspace:${workspaceId}`).emit('activity_update');
     }
 
     return res.status(200).json({ message: 'Role updated successfully.' });
@@ -131,7 +156,7 @@ export const removeMember = async (req, res) => {
   try {
     const { id: workspaceId, userId } = req.params;
 
-    const membership = await WorkspaceMember.findOne({ workspaceId, userId });
+    const membership = await WorkspaceMember.findOne({ workspaceId, userId }).populate('userId', 'username');
     if (!membership) {
       return res.status(404).json({ message: 'Member not found.' });
     }
@@ -140,19 +165,32 @@ export const removeMember = async (req, res) => {
       return res.status(400).json({ message: 'The owner cannot be removed. Transfer ownership first.' });
     }
 
+    const removedUsername = membership.userId.username;
+
     await WorkspaceMember.deleteOne({ _id: membership._id });
 
     logActivity({
       workspaceId,
       userId: req.user.id,
       actionType: 'MEMBER_REMOVED',
-      targetId: userId
+      targetId: userId,
+      metadata: { removedUsername }
+    });
+
+    // Log that the user left the workspace
+    logActivity({
+      workspaceId,
+      userId: userId,
+      actionType: 'USER_LEFT',
+      targetId: userId,
+      metadata: { username: removedUsername }
     });
 
     // Notify via Socket.IO
     const io = req.app.get('io');
     if (io) {
       io.to(`workspace:${workspaceId}`).emit('member_removed', { userId });
+      io.to(`workspace:${workspaceId}`).emit('activity_update');
     }
 
     return res.status(200).json({ message: 'Member removed successfully.' });

@@ -10,6 +10,7 @@ import authRoutes from './routes/authRoutes.js';
 import workspaceRoutes from './routes/workspaceRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
 import commentRoutes from './routes/commentRoutes.js';
+import executionRoutes from './routes/execution.js';
 import authMiddleware from './middleware/authMiddleware.js';
 import File from './models/File.js';
 import WorkspaceMember from './models/WorkspaceMember.js';
@@ -48,6 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/execute', executionRoutes);
 
 // GET /api/me — protected example
 app.get('/api/me', authMiddleware, (req, res) => {
@@ -205,6 +207,63 @@ io.on('connection', (socket) => {
     socket.to(`workspace:${workspaceId}`).emit('reaction_updated', comment);
   });
 
+  // ── Voice Chat Events ──────────────────────────────────────────────────────
+  socket.on('voice_join', ({ workspaceId, userId, username }) => {
+    if (!workspaceId) return;
+    
+    socket.join(`voice:${workspaceId}`);
+    socket.data.inVoiceChat = true;
+    socket.data.voiceUserId = userId;
+    
+    console.log(`[voice] ${username} (${userId}) joined voice chat in workspace:${workspaceId}`);
+    
+    // Notify others in the voice chat
+    socket.to(`voice:${workspaceId}`).emit('voice_user_joined', { 
+      userId, 
+      username,
+      socketId: socket.id
+    });
+  });
+
+  socket.on('voice_leave', ({ workspaceId, userId }) => {
+    if (!workspaceId) return;
+    
+    socket.leave(`voice:${workspaceId}`);
+    socket.data.inVoiceChat = false;
+    
+    console.log(`[voice] User ${userId} left voice chat in workspace:${workspaceId}`);
+    
+    // Notify others
+    socket.to(`voice:${workspaceId}`).emit('voice_user_left', { userId });
+  });
+
+  socket.on('voice_offer', ({ to, offer }) => {
+    console.log(`[voice] Forwarding offer from ${socket.data.voiceUserId} to ${to}`);
+    // Broadcast to all in voice chat so the right peer receives it
+    socket.to(`voice:${socket.data.workspaceId}`).emit('voice_offer', {
+      from: socket.data.voiceUserId,
+      offer
+    });
+  });
+
+  socket.on('voice_answer', ({ to, answer }) => {
+    console.log(`[voice] Forwarding answer from ${socket.data.voiceUserId} to ${to}`);
+    // Broadcast to all in voice chat so the right peer receives it
+    socket.to(`voice:${socket.data.workspaceId}`).emit('voice_answer', {
+      from: socket.data.voiceUserId,
+      answer
+    });
+  });
+
+  socket.on('voice_ice_candidate', ({ to, candidate }) => {
+    console.log(`[voice] Forwarding ICE candidate from ${socket.data.voiceUserId} to ${to}`);
+    // Broadcast to all in voice chat so the right peer receives it
+    socket.to(`voice:${socket.data.workspaceId}`).emit('voice_ice_candidate', {
+      from: socket.data.voiceUserId,
+      candidate
+    });
+  });
+
   // ── disconnect ──────────────────────────────────────────────────────────────
   socket.on('disconnect', async () => {
     const workspaceId = socket.data.workspaceId;
@@ -212,6 +271,11 @@ io.on('connection', (socket) => {
     const username = socket.data.username;
 
     if (workspaceId && userId) {
+      // If user was in voice chat, notify others
+      if (socket.data.inVoiceChat) {
+        socket.to(`voice:${workspaceId}`).emit('voice_user_left', { userId });
+      }
+
       // Log Activity
       await ActivityLog.create({
         workspaceId,

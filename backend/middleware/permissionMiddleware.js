@@ -20,10 +20,11 @@ const roleLevels = {
 export const requireRole = (minRole) => {
   return async (req, res, next) => {
     try {
-      const workspaceId = req.params.id || req.params.workspaceId || req.body.workspaceId;
+      console.log('requireRole check - req.body:', req.body, 'req.params:', req.params);
+      const workspaceId = req.params.id || req.params.workspaceId || req.body?.workspaceId;
       
       if (!workspaceId) {
-        return res.status(400).json({ message: 'Workspace ID is required for permission check.' });
+        return res.status(400).json({ message: 'Workspace ID is required for permission check.', debug: req.body });
       }
 
       const membership = await WorkspaceMember.findOne({

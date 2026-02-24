@@ -83,7 +83,7 @@ const ShareWorkspaceModal = ({ workspaceId, workspaceName, members: initialMembe
             </div>
 
             <div className="form-group w-full sm:w-auto mt-2 sm:mt-0">
-              <button type="submit" className="btn bg-blue-500 hover:bg-blue-600 text-white h-12 px-6 rounded-lg font-medium shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 w-full flex items-center justify-center min-w-[100px]" disabled={loading}>
+              <button type="submit" className="btn btn-primary h-12 px-6 w-full min-w-[100px]" disabled={loading}>
                 {loading ? <span className="btn-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Invite'}
               </button>
             </div>

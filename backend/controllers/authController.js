@@ -79,3 +79,27 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: 'Server error during login' });
   }
 };
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.user.id !== id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Unauthorized to delete this user' });
+    }
+
+    const { deleteUserCascade } = await import('../services/deleteUserCascade.js');
+    const result = await deleteUserCascade(id);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[delete user error]', error);
+    if (error.message === 'User not found') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (error.message === 'Cannot delete system administrator accounts') {
+      return res.status(403).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Server error during user deletion' });
+  }
+};

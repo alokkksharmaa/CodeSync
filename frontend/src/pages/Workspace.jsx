@@ -230,7 +230,7 @@ const Workspace = () => {
       <header className="ws-topbar flex items-center justify-between px-4 sm:px-6 h-16 bg-gray-900/40 backdrop-blur-xl border-b border-gray-800/60 shrink-0 z-20">
         <div className="ws-topbar-left flex items-center gap-4">
           <button
-            className="btn bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center rounded-lg transition"
+            className="btn btn-secondary w-8 h-8 p-0 flex items-center justify-center rounded-lg transition"
             onClick={() => navigate('/dashboard')}
             title="Back to dashboard"
           >
@@ -276,29 +276,29 @@ const Workspace = () => {
 
           <div className="topbar-actions flex items-center gap-1.5">
             <button
-              className={`btn px-3 py-1.5 rounded-lg text-sm font-medium transition ${showActivity ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition ${showActivity ? 'active' : ''}`}
               onClick={() => { setShowMembers(false); setShowHistory(false); setShowActivity(!showActivity); }}
             >
               Activity
             </button>
             <button
-              className={`btn px-3 py-1.5 rounded-lg text-sm font-medium transition ${showHistory ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition ${showHistory ? 'active' : ''}`}
               onClick={() => { setShowMembers(false); setShowActivity(false); setShowHistory(!showHistory); }}
             >
               History
             </button>
             <button
-              className={`btn px-3 py-1.5 rounded-lg text-sm font-medium transition ${showMembers ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition ${showMembers ? 'active' : ''}`}
               onClick={() => { setShowHistory(false); setShowActivity(false); setShowMembers(!showMembers); }}
             >
               Members
             </button>
             {isOwner && (
-              <button className="btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/10 transition hover:-translate-y-0.5 ml-1" onClick={() => setShowInvite(true)}>
+              <button className="btn btn-primary px-4 py-1.5 rounded-lg text-sm transition ml-1" onClick={() => setShowInvite(true)}>
                 Invite
               </button>
             )}
-            <button className="btn px-3 py-1.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-500/10 transition ml-1" onClick={handleLeaveSession}>
+            <button className="btn btn-ghost btn-error px-3 py-1.5 rounded-lg text-sm transition ml-1" onClick={handleLeaveSession}>
               Leave
             </button>
           </div>

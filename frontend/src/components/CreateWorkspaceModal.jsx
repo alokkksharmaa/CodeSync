@@ -78,11 +78,11 @@ const CreateWorkspaceModal = ({ onClose, onCreated }) => {
             </div>
           </div>
 
-          <div className="modal-actions flex items-center justify-end gap-3 mt-2">
-            <button type="button" className="btn px-4 py-2 rounded-lg font-medium text-gray-300 hover:text-white hover:bg-white/5 transition" onClick={onClose} disabled={loading}>
+          <div className="modal-actions flex items-center justify-center gap-3 mt-4">
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="btn bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg font-medium shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 flex items-center justify-center min-w-[100px]" disabled={loading}>
+            <button type="submit" className="btn btn-primary min-w-[100px]" disabled={loading}>
               {loading ? <span className="btn-spinner w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Create'}
             </button>
           </div>

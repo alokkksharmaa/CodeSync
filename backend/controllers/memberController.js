@@ -13,6 +13,7 @@ export const inviteMember = async (req, res) => {
     const { id: workspaceId } = req.params;
     const { email, role } = req.body;
 
+    
     if (!email || !role) {
       return res.status(400).json({ message: 'Email and role are required.' });
     }

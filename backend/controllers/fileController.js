@@ -48,6 +48,7 @@ export const createFile = async (req, res) => {
     // Explicit duplicate check (before hitting the DB unique constraint)
     const existing = await File.findOne({ workspaceId, path, nameLower }).lean();
     if (existing) {
+      console.log('Duplicate found!', { workspaceId, path, nameLower, existing });
       return res.status(409).json({
         message: `A ${existing.type === 'folder' ? 'folder' : 'file'} named "${name}" already exists in this folder.`
       });

@@ -161,3 +161,63 @@ export const removeMember = async (req, res) => {
     return res.status(500).json({ message: 'Failed to remove member.' });
   }
 };
+
+/**
+ * joinWorkspace
+ * POST /api/workspaces/:id/join
+ * Join a workspace via ID (Room ID)
+ */
+export const joinWorkspace = async (req, res) => {
+  try {
+    const { id: workspaceId } = req.params;
+    const userId = req.user.id;
+
+    // Check if workspace exists
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found. Invalid Room ID.' });
+    }
+
+    // Check if user is already a member
+    const existingMembership = await WorkspaceMember.findOne({ workspaceId, userId });
+    if (existingMembership) {
+      return res.status(400).json({ message: 'You are already a member of this workspace.', workspaceId });
+    }
+
+    // Add user as editor (or viewer, depending on desired default)
+    const membership = await WorkspaceMember.create({
+      workspaceId,
+      userId,
+      role: 'editor',
+    });
+
+    logActivity({
+      workspaceId,
+      userId,
+      actionType: 'USER_JOINED',
+      metadata: { method: 'ROOM_ID' }
+    });
+
+    // Notify others in room via Socket.IO
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`workspace:${workspaceId}`).emit('member_joined', {
+        _id: membership._id,
+        user: { _id: userId, username: req.user.username, email: req.user.email },
+        role: 'editor'
+      });
+    }
+
+    return res.status(200).json({ 
+      message: 'Joined workspace successfully.',
+      workspaceId
+    });
+  } catch (error) {
+    console.error('[joinWorkspace error]', error);
+    // If it's a CastError (invalid ObjectId format)
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid Room ID format.' });
+    }
+    return res.status(500).json({ message: 'Failed to join workspace.' });
+  }
+};

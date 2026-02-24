@@ -2,7 +2,7 @@ import ActivityLog from '../models/ActivityLog.js';
 
 export const getActivities = async (req, res) => {
   try {
-    const { workspaceId } = req.params;
+    const { id: workspaceId } = req.params;
     
     // Using lean() for better performance as we don't need Mongoose features here
     const activities = await ActivityLog.find({ workspaceId })

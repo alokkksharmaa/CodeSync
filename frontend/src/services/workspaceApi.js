@@ -38,3 +38,12 @@ export const shareWorkspace = async (id, email, role) => {
   const res = await api.post(`/api/workspaces/${id}/share`, { email, role })
   return res.data
 }
+
+/**
+ * Join a workspace via ID
+ * @param {string} id Workspace ID
+ */
+export const joinWorkspace = async (id) => {
+  const res = await api.post(`/api/workspaces/${id}/join`)
+  return res.data
+}

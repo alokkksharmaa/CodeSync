@@ -6,6 +6,7 @@ import { fetchWorkspaces, fetchWorkspace } from '../services/workspaceApi'
 import api from '../services/api'
 import { io } from 'socket.io-client'
 import CreateWorkspaceModal from '../components/CreateWorkspaceModal'
+import JoinWorkspaceModal from '../components/JoinWorkspaceModal'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
@@ -178,6 +179,7 @@ const Dashboard = () => {
   const [workspaces, setWorkspaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
+  const [showJoin, setShowJoin] = useState(false)
   const [refreshActivity, setRefreshActivity] = useState(0)
   const [activeTab, setActiveTab] = useState('my')
 
@@ -238,9 +240,14 @@ const Dashboard = () => {
               {!loading && `${shown.length} workspace${shown.length !== 1 ? 's' : ''}`}
             </p>
           </div>
-          <button className="btn btn-primary px-5 py-2.5 rounded-lg shadow-lg transition-all hover:-translate-y-0.5" onClick={() => setShowCreate(true)}>
-            + New Workspace
-          </button>
+          <div className="flex items-center gap-3">
+            <button className="btn px-4 py-2.5 rounded-lg border border-gray-700/60 bg-gray-800/40 hover:bg-white/5 hover:border-gray-500/50 text-white transition-all shadow-sm" onClick={() => setShowJoin(true)}>
+              Join by ID
+            </button>
+            <button className="btn btn-primary px-5 py-2.5 rounded-lg shadow-lg transition-all hover:-translate-y-0.5" onClick={() => setShowCreate(true)}>
+              + New Workspace
+            </button>
+          </div>
         </div>
 
         <div className="dashboard-content-layout flex-1 p-8 grid lg:grid-cols-[1fr_320px] gap-8 overflow-y-auto">
@@ -291,6 +298,9 @@ const Dashboard = () => {
 
       {showCreate && (
         <CreateWorkspaceModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
+      )}
+      {showJoin && (
+        <JoinWorkspaceModal onClose={() => setShowJoin(false)} onJoined={loadWorkspaces} />
       )}
     </div>
   )

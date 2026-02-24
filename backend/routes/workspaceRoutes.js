@@ -11,7 +11,8 @@ import {
 import {
   inviteMember,
   updateMemberRole,
-  removeMember
+  removeMember,
+  joinWorkspace
 } from '../controllers/memberController.js';
 import { leaveSession } from '../controllers/sessionController.js';
 import { transferOwnership } from '../controllers/ownershipController.js';
@@ -33,6 +34,9 @@ router.delete('/:id/session', leaveSession);
 // ─── Member & Role Management ────────────────────────────────────────────────
 // Invite user
 router.post('/:id/invite', isOwner, inviteMember);
+
+// Join workspace via ID
+router.post('/:id/join', joinWorkspace);
 
 // Update member role
 router.patch('/:id/role', isOwner, updateMemberRole);

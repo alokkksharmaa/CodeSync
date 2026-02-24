@@ -54,11 +54,11 @@ const JoinWorkspaceModal = ({ onClose, onJoined }) => {
           </div>
 
           <div className="modal-actions flex items-center justify-center gap-3 mt-4">
-            <button type="button" className="btn btn-ghost px-4 py-2 rounded-lg text-gray-400 hover:text-white transition" onClick={onClose} disabled={loading}>
+            <button type="button" className="btn btn-ghost rounded-lg" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary min-w-[100px] px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow disabled:opacity-50 transition" disabled={loading}>
-              {loading ? <span className="btn-spinner inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Join Room'}
+            <button type="submit" className="btn btn-primary min-w-[100px] rounded-lg" disabled={loading}>
+              {loading ? <span className="btn-spinner" /> : 'Join Room'}
             </button>
           </div>
         </form>

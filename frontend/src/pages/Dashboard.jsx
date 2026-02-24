@@ -241,7 +241,7 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="btn px-4 py-2.5 rounded-lg border border-gray-700/60 bg-gray-800/40 hover:bg-white/5 hover:border-gray-500/50 text-white transition-all shadow-sm" onClick={() => setShowJoin(true)}>
+            <button className="btn btn-secondary px-5 py-2.5 rounded-lg shadow-md transition-all hover:-translate-y-0.5" onClick={() => setShowJoin(true)}>
               Join by ID
             </button>
             <button className="btn btn-primary px-5 py-2.5 rounded-lg shadow-lg transition-all hover:-translate-y-0.5" onClick={() => setShowCreate(true)}>

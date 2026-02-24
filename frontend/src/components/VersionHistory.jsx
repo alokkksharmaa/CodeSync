@@ -48,7 +48,7 @@ const VersionHistory = ({ fileId, onRestore, canEdit }) => {
       <div className="history-header flex items-center justify-between px-4 py-3 border-b border-gray-700/60 bg-gray-800/40">
         <span className="history-title text-sm font-semibold tracking-wider text-gray-400 uppercase">History</span>
         {canEdit && (
-          <button className="btn-save-snapshot text-xs font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 border border-blue-500/20" onClick={handleSnapshot}>
+          <button className="btn btn-sm btn-secondary" onClick={handleSnapshot}>
             <span className="opacity-80">📸</span> Snapshot
           </button>
         )}
@@ -56,9 +56,15 @@ const VersionHistory = ({ fileId, onRestore, canEdit }) => {
 
       <div className="history-list flex-1 overflow-y-auto p-3 custom-scrollbar">
         {loading ? (
-          <div className="history-loading text-sm text-gray-500 text-center py-4">Loading history...</div>
+          <div className="flex flex-col items-center justify-center text-gray-500 gap-3 py-8">
+            <span className="spinner"></span>
+            <p className="text-sm">Loading history...</p>
+          </div>
         ) : history.length === 0 ? (
-          <div className="history-empty text-sm text-gray-500 text-center py-4 italic">No versions found.</div>
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-gray-700/60 rounded-xl bg-gray-800/20 m-2">
+            <span className="text-2xl mb-2 text-gray-600 opacity-50">⏱️</span>
+            <p className="text-sm text-gray-400">No versions found.</p>
+          </div>
         ) : (
           <div className="flex flex-col gap-2">
             {history.map((v) => (
@@ -71,7 +77,7 @@ const VersionHistory = ({ fileId, onRestore, canEdit }) => {
                 </div>
                 {canEdit && (
                   <button
-                    className="btn-restore-tiny text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 px-3 py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    className="btn btn-sm btn-ghost opacity-0 group-hover:opacity-100 focus:opacity-100"
                     onClick={() => handleRestore(v._id)}
                   >
                     Restore

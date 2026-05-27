@@ -351,6 +351,23 @@ const TreeNode = ({
   );
 };
 
+// ─── Highlight ────────────────────────────────────────────────────────────────
+
+const Highlight = ({ text, query }) => {
+  if (!query) return <span>{text}</span>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <span>{text}</span>;
+  return (
+    <span>
+      {text.slice(0, idx)}
+      <mark style={{ background: 'rgba(59,130,246,0.35)', color: '#93c5fd', borderRadius: 2, padding: '0 1px' }}>
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </span>
+  );
+};
+
 // ─── FileExplorer ─────────────────────────────────────────────────────────────
 
 const FileExplorer = ({
@@ -362,9 +379,15 @@ const FileExplorer = ({
   canEdit,
 }) => {
   const [creatingRoot, setCreatingRoot] = useState(null); // 'file'|'folder'|null
+  const [query, setQuery] = useState('');
   const submittingRoot = useRef(false);
 
   const tree = buildTree(files);
+
+  // Flat filtered results for search mode
+  const searchResults = query.trim()
+    ? files.filter(f => f.name.toLowerCase().includes(query.toLowerCase()))
+    : null;
 
   const handleRootCreate = async (type, name) => {
     if (submittingRoot.current) return;
@@ -401,7 +424,7 @@ const FileExplorer = ({
 
   return (
     <div className="file-explorer w-64 bg-gray-900/60 backdrop-blur-md border-r border-gray-800/60 flex flex-col shrink-0 text-gray-300">
-      <div className="explorer-header flex items-center justify-between px-4 py-3 border-b border-gray-800/60 mb-2">
+      <div className="explorer-header flex items-center justify-between px-4 py-3 border-b border-gray-800/60">
         <span className="explorer-title text-xs font-semibold tracking-wider text-gray-500 uppercase">FILES</span>
         {canEdit && (
           <div className="explorer-header-actions flex items-center gap-1">
@@ -422,46 +445,87 @@ const FileExplorer = ({
           </div>
         )}
       </div>
+      <div className="px-3 py-2 border-b border-gray-800/60">
+        <div style={{ position: 'relative' }}>
+          <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: 12, pointerEvents: 'none' }}>🔍</span>
+          <input
+            type="text"
+            className="explorer-inline-input w-full bg-gray-900/60 border border-gray-700/40 text-white rounded text-xs px-2 py-1.5 outline-none focus:border-blue-500/50 transition"
+            style={{ paddingLeft: 24 }}
+            placeholder="Search files..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, lineHeight: 1 }}
+            >✕</button>
+          )}
+        </div>
+      </div>
 
       <div className="explorer-list flex-1 overflow-y-auto pb-4 custom-scrollbar">
-        {creatingRoot === "file" && (
-          <div className="px-3 mb-1">
-            <InlineInput
-              placeholder="filename.js"
-              onSubmit={(name) => handleRootCreate("file", name)}
-              onCancel={() => setCreatingRoot(null)}
-            />
-          </div>
-        )}
-        {creatingRoot === "folder" && (
-          <div className="px-3 mb-1">
-            <InlineInput
-              placeholder="folder-name"
-              onSubmit={(name) => handleRootCreate("folder", name)}
-              onCancel={() => setCreatingRoot(null)}
-            />
-          </div>
-        )}
+        {searchResults ? (
+          searchResults.length === 0 ? (
+            <p className="explorer-empty text-sm text-gray-500 text-center p-6 italic">No files found.</p>
+          ) : (
+            searchResults.map(f => (
+              <div
+                key={f._id}
+                className={`explorer-item flex items-center gap-2 py-1.5 px-3 text-sm rounded-md cursor-pointer transition select-none mx-1 ${activeFileId === f._id ? 'bg-blue-500/15 text-blue-400' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}
+                onClick={() => onFileSelect(f._id)}
+              >
+                <span className="opacity-70" style={{ fontSize: 11 }}>{f.type === 'folder' ? '📁' : getIcon(f.name, f.type)}</span>
+                <span className="truncate flex-1"><Highlight text={f.name} query={query} /></span>
+                {f.path !== '/' && (
+                  <span style={{ fontSize: 10, color: '#6b7280', flexShrink: 0 }}>{f.path}</span>
+                )}
+              </div>
+            ))
+          )
+        ) : (
+          <>
+            {creatingRoot === "file" && (
+              <div className="px-3 mb-1">
+                <InlineInput
+                  placeholder="filename.js"
+                  onSubmit={(name) => handleRootCreate("file", name)}
+                  onCancel={() => setCreatingRoot(null)}
+                />
+              </div>
+            )}
+            {creatingRoot === "folder" && (
+              <div className="px-3 mb-1">
+                <InlineInput
+                  placeholder="folder-name"
+                  onSubmit={(name) => handleRootCreate("folder", name)}
+                  onCancel={() => setCreatingRoot(null)}
+                />
+              </div>
+            )}
 
-        {files.length === 0 && !creatingRoot && (
-          <p className="explorer-empty text-sm text-gray-500 text-center p-6 italic">
-            No files yet. Create one to start coding.
-          </p>
-        )}
+            {files.length === 0 && !creatingRoot && (
+              <p className="explorer-empty text-sm text-gray-500 text-center p-6 italic">
+                No files yet. Create one to start coding.
+              </p>
+            )}
 
-        {tree.map((node) => (
-          <TreeNode
-            key={node._id}
-            node={node}
-            level={0}
-            activeFileId={activeFileId}
-            onFileSelect={onFileSelect}
-            onFilesChange={onFilesChange}
-            allFiles={files}
-            canEdit={canEdit}
-            workspaceId={workspaceId}
-          />
-        ))}
+            {tree.map((node) => (
+              <TreeNode
+                key={node._id}
+                node={node}
+                level={0}
+                activeFileId={activeFileId}
+                onFileSelect={onFileSelect}
+                onFilesChange={onFilesChange}
+                allFiles={files}
+                canEdit={canEdit}
+                workspaceId={workspaceId}
+              />
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

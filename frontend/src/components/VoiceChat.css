@@ -1,4 +1,5 @@
-/* Voice Chat Component Styles */
+/* Voice Chat Component Styles — Aurora Design System */
+
 .voice-chat-container {
   display: flex;
   align-items: center;
@@ -10,72 +11,63 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  border-radius: 0.5rem;
+  border-radius: 0.625rem;
   border: 1px solid transparent;
   background: transparent;
-  color: #9ca3af;
+  color: #94a3b8;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.voice-chat-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.voice-chat-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.voice-chat-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.voice-chat-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.voice-chat-btn:active:not(:disabled) { transform: translateY(0); }
+.voice-chat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Join Voice Button */
 .voice-chat-btn.join {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.12) 100%);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .voice-chat-btn.join:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.2) 100%);
-  border-color: rgba(34, 197, 94, 0.5);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 /* Mute Button */
 .voice-chat-btn.mute {
   background: transparent;
-  color: #9ca3af;
-  border-color: rgba(156, 163, 175, 0.2);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.2);
 }
 
 .voice-chat-btn.mute:hover:not(:disabled) {
-  background: rgba(156, 163, 175, 0.1);
-  border-color: rgba(156, 163, 175, 0.3);
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 .voice-chat-btn.mute.muted {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(249, 115, 22, 0.15) 100%);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.4);
 }
 
 .voice-chat-btn.mute.muted:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.25) 100%);
-  border-color: rgba(239, 68, 68, 0.6);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(249, 115, 22, 0.25) 100%);
+  border-color: rgba(244, 63, 94, 0.6);
 }
 
 /* Self Monitor Button */
 .voice-chat-btn.monitor {
   background: transparent;
-  color: #9ca3af;
-  border-color: rgba(156, 163, 175, 0.2);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.2);
 }
 
 .voice-chat-btn.monitor:hover:not(:disabled) {
@@ -85,42 +77,29 @@
 }
 
 .voice-chat-btn.monitor.active {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
   color: #a78bfa;
   border-color: rgba(139, 92, 246, 0.4);
 }
 
-.voice-chat-btn.monitor.active::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 0.5rem;
-  padding: 1px;
-  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.5;
-}
-
 /* Leave Button */
 .voice-chat-btn.leave {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(249, 115, 22, 0.12) 100%);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.3);
 }
 
 .voice-chat-btn.leave:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.25) 100%);
-  border-color: rgba(239, 68, 68, 0.5);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.22) 0%, rgba(249, 115, 22, 0.22) 100%);
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
 }
 
 /* Not Supported Button */
 .voice-chat-btn.not-supported {
   opacity: 0.4;
   cursor: not-allowed;
-  color: #6b7280;
+  color: #64748b;
 }
 
 /* Connection Status */
@@ -132,7 +111,7 @@
 
 .voice-chat-participants {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: #64748b;
   padding: 0 0.5rem;
   font-weight: 500;
 }
@@ -155,23 +134,17 @@
 }
 
 .voice-chat-connection-dot.connected {
-  background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #10b981;
 }
 
 .voice-chat-connection-dot.connecting {
-  background: rgba(234, 179, 8, 0.15);
-  color: #eab308;
-  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #f59e0b;
   animation: pulse-yellow 2s ease-in-out infinite;
 }
 
 .voice-chat-connection-dot.failed,
 .voice-chat-connection-dot.disconnected {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f43f5e;
 }
 
 /* Icon Animations */
@@ -186,22 +159,12 @@
 
 /* Pulse Animations */
 @keyframes pulse-yellow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(234, 179, 8, 0);
-  }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .voice-chat-btn {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
-  }
-  
-  .voice-chat-participants {
-    display: none;
-  }
+  .voice-chat-btn { padding: 0.375rem 0.625rem; font-size: 0.75rem; }
+  .voice-chat-participants { display: none; }
 }

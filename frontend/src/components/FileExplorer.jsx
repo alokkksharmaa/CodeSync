@@ -1,13 +1,21 @@
 import { useState, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
+  Folder,
+  ChevronDown,
+  ChevronRight,
+  FilePlus,
+  FolderPlus,
+  Pencil,
+  X,
+  Search,
+} from "lucide-react";
+import {
   createFile,
   createFolder,
   deleteFile,
   renameFile,
 } from "../services/fileApi";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const LANG_ICON = {
   js: "JS",
@@ -15,22 +23,22 @@ const LANG_ICON = {
   ts: "TS",
   tsx: "TS",
   py: "PY",
-  java: "♨",
+  java: "JV",
   cpp: "C++",
   txt: "TXT",
   c: "C",
   go: "GO",
-  rs: "🦀",
+  rs: "RS",
   html: "<>",
   css: "#",
   json: "{}",
-  md: "📝",
+  md: "MD",
 };
 
 const getIcon = (name, type) => {
   if (type === "folder") return null;
   const ext = name?.split(".").pop()?.toLowerCase() || "";
-  return LANG_ICON[ext] || "📄";
+  return LANG_ICON[ext] || "FILE";
 };
 
 const buildTree = (files) => {
@@ -48,7 +56,6 @@ const buildTree = (files) => {
 
   sorted.forEach((f) => {
     const parentPath = f.path;
-
     const parent = sorted.find(
       (p) =>
         p.type === "folder" &&
@@ -66,8 +73,6 @@ const buildTree = (files) => {
   return roots;
 };
 
-// ─── Search Helpers ───────────────────────────────────────────────────────────
-
 const filterTree = (nodes, query) => {
   if (!query.trim()) return nodes;
 
@@ -77,19 +82,12 @@ const filterTree = (nodes, query) => {
 
       if (node.type === "folder") {
         const filteredChildren = filterTree(node.children || [], query);
-
         if (matches || filteredChildren.length > 0) {
-          return {
-            ...node,
-            children: filteredChildren,
-          };
+          return { ...node, children: filteredChildren };
         }
       }
 
-      if (matches) {
-        return node;
-      }
-
+      if (matches) return node;
       return null;
     })
     .filter(Boolean);
@@ -97,12 +95,13 @@ const filterTree = (nodes, query) => {
 
 const highlightMatch = (text, query) => {
   if (!query.trim()) return text;
-
   const regex = new RegExp(`(${query})`, "gi");
-
   return text.split(regex).map((part, index) =>
     part.toLowerCase() === query.toLowerCase() ? (
-      <span key={index} className="bg-blue-500/20 text-blue-300 rounded px-0.5">
+      <span
+        key={index}
+        className="bg-accent/20 text-accent-hover rounded px-0.5"
+      >
         {part}
       </span>
     ) : (
@@ -110,8 +109,6 @@ const highlightMatch = (text, query) => {
     ),
   );
 };
-
-// ─── Inline Input ─────────────────────────────────────────────────────────────
 
 const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
   const [value, setValue] = useState("");
@@ -121,21 +118,15 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
   const handleSubmit = useCallback(
     async (e) => {
       e?.preventDefault();
-
       if (submitting.current || hasSubmitted.current) return;
-
       const name = value.trim();
-
       if (!name) {
         onCancel();
         return;
       }
-
       submitting.current = true;
       hasSubmitted.current = true;
-
       await onSubmit(name);
-
       submitting.current = false;
     },
     [value, onSubmit, onCancel],
@@ -146,7 +137,6 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
       e.preventDefault();
       handleSubmit();
     }
-
     if (e.key === "Escape") onCancel();
   };
 
@@ -157,11 +147,11 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="explorer-inline-form w-full pr-2">
+    <form onSubmit={handleSubmit} className="explorer-inline-form">
       <input
         autoFocus
         type="text"
-        className="explorer-inline-input w-full bg-gray-900/60 border border-blue-500/50 text-white rounded text-sm px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500/50"
+        className="explorer-inline-input"
         placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -171,8 +161,6 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
     </form>
   );
 };
-
-// ─── Tree Node ────────────────────────────────────────────────────────────────
 
 const TreeNode = ({
   node,
@@ -194,14 +182,8 @@ const TreeNode = ({
 
   const handleCreateFile = async (name) => {
     try {
-      const newFile = await createFile({
-        workspaceId,
-        name,
-        path: folderPath,
-      });
-
+      const newFile = await createFile({ workspaceId, name, path: folderPath });
       onFileSelect(newFile._id);
-
       toast.success(`Created ${name}`);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to create file";
@@ -213,12 +195,7 @@ const TreeNode = ({
 
   const handleCreateFolder = async (name) => {
     try {
-      await createFolder({
-        workspaceId,
-        name,
-        path: folderPath,
-      });
-
+      await createFolder({ workspaceId, name, path: folderPath });
       toast.success(`Created folder ${name}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to create folder");
@@ -229,25 +206,20 @@ const TreeNode = ({
 
   const handleDelete = async (e) => {
     e.stopPropagation();
-
     const label =
       node.type === "folder"
         ? `folder "${node.name}" and all its contents`
         : `file "${node.name}"`;
-
     if (!window.confirm(`Delete ${label}?`)) return;
 
     try {
       const result = await deleteFile(node._id);
-
       onFilesChange((prev) =>
         prev.filter((f) => !result.deletedIds.includes(String(f._id))),
       );
-
       if (result.deletedIds.includes(String(activeFileId))) {
         onFileSelect(null);
       }
-
       toast.success("Deleted");
     } catch {
       toast.error("Failed to delete");
@@ -257,17 +229,11 @@ const TreeNode = ({
   const handleRename = async (name) => {
     try {
       const updated = await renameFile(node._id, name);
-
-      onFilesChange((prev) => {
-        return prev.map((f) => {
-          if (String(f._id) === String(updated._id)) {
-            return { ...f, ...updated };
-          }
-
-          return f;
-        });
-      });
-
+      onFilesChange((prev) =>
+        prev.map((f) =>
+          String(f._id) === String(updated._id) ? { ...f, ...updated } : f,
+        ),
+      );
       toast.success(`Renamed to ${name}`);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to rename");
@@ -280,22 +246,20 @@ const TreeNode = ({
     return (
       <div className="tree-folder" style={{ paddingLeft: `${level * 12}px` }}>
         <div
-          className="explorer-item explorer-folder group flex items-center justify-between py-1.5 px-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded-md cursor-pointer transition select-none mx-1"
+          className="explorer-item explorer-folder group"
           onClick={() => setExpanded((v) => !v)}
         >
           <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="folder-arrow text-gray-500 w-4 flex items-center justify-center shrink-0">
+            <span className="folder-arrow">
               {expanded ? (
                 <ChevronDown size={13} />
               ) : (
                 <ChevronRight size={13} />
               )}
             </span>
-
-            <span className="folder-icon text-blue-400 opacity-90 shrink-0 flex items-center">
+            <span className="folder-icon">
               <Folder size={14} fill="currentColor" fillOpacity={0.15} />
             </span>
-
             {renaming ? (
               <InlineInput
                 placeholder={node.name}
@@ -303,43 +267,37 @@ const TreeNode = ({
                 onCancel={() => setRenaming(false)}
               />
             ) : (
-              <span className="file-name truncate">
+              <span className="file-name">
                 {highlightMatch(node.name, searchQuery)}
               </span>
             )}
           </div>
 
           {canEdit && !renaming && (
-            <div
-              className="item-actions hidden group-hover:flex items-center gap-0.5"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="item-actions" onClick={(e) => e.stopPropagation()}>
               <button
-                className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
+                className="btn-icon-tiny"
                 title="New file"
                 onClick={() => setCreating("file")}
               >
                 <FilePlus size={13} />
               </button>
-
               <button
-                className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
+                className="btn-icon-tiny"
                 title="New folder"
                 onClick={() => setCreating("folder")}
               >
                 <FolderPlus size={13} />
               </button>
-
               <button
-                className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
+                className="btn-icon-tiny"
                 title="Rename"
                 onClick={() => setRenaming(true)}
               >
                 <Pencil size={12} />
               </button>
-
               <button
-                className="btn-icon-tiny btn-delete-tiny text-gray-400 hover:text-red-400 px-1 py-0.5 rounded hover:bg-red-500/10 transition"
+                className="btn-icon-tiny btn-delete-tiny"
                 title="Delete"
                 onClick={handleDelete}
               >
@@ -360,7 +318,6 @@ const TreeNode = ({
                 />
               </div>
             )}
-
             {creating === "folder" && (
               <div style={{ paddingLeft: `${(level + 1) * 12}px` }}>
                 <InlineInput
@@ -370,7 +327,6 @@ const TreeNode = ({
                 />
               </div>
             )}
-
             {node.children.map((child) => (
               <TreeNode
                 key={child._id}
@@ -393,19 +349,12 @@ const TreeNode = ({
 
   return (
     <div
-      className={`explorer-item group flex items-center justify-between py-1.5 px-2 text-sm rounded-md cursor-pointer transition select-none mx-1 ${
-        activeFileId === node._id
-          ? "bg-blue-500/15 text-blue-400"
-          : "text-gray-300 hover:bg-white/5 hover:text-white"
-      }`}
+      className={`explorer-item group ${activeFileId === node._id ? "active" : ""}`}
       style={{ paddingLeft: `${level * 12 + 20}px` }}
       onClick={() => onFileSelect(node._id)}
     >
       <div className="flex items-center gap-2 overflow-hidden">
-        <span className="file-icon w-4 flex items-center justify-center shrink-0">
-          {getIcon(node.name, node.type)}
-        </span>
-
+        <span className="file-icon">{getIcon(node.name, node.type)}</span>
         {renaming ? (
           <InlineInput
             placeholder={node.name}
@@ -413,19 +362,16 @@ const TreeNode = ({
             onCancel={() => setRenaming(false)}
           />
         ) : (
-          <span className="file-name truncate">
+          <span className="file-name">
             {highlightMatch(node.name, searchQuery)}
           </span>
         )}
       </div>
 
       {canEdit && !renaming && (
-        <div
-          className="item-actions hidden group-hover:flex items-center gap-0.5"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="item-actions" onClick={(e) => e.stopPropagation()}>
           <button
-            className="btn-icon-tiny text-gray-400 hover:text-white px-1 py-0.5 rounded hover:bg-white/10 transition"
+            className="btn-icon-tiny"
             title="Rename"
             onClick={(e) => {
               e.stopPropagation();
@@ -434,9 +380,8 @@ const TreeNode = ({
           >
             <Pencil size={12} />
           </button>
-
           <button
-            className="btn-icon-tiny btn-delete-tiny text-gray-400 hover:text-red-400 px-1 py-0.5 rounded hover:bg-red-500/10 transition"
+            className="btn-icon-tiny btn-delete-tiny"
             title="Delete"
             onClick={handleDelete}
           >
@@ -448,8 +393,6 @@ const TreeNode = ({
   );
 };
 
-// ─── FileExplorer ─────────────────────────────────────────────────────────────
-
 const FileExplorer = ({
   workspaceId,
   files,
@@ -460,45 +403,29 @@ const FileExplorer = ({
 }) => {
   const [creatingRoot, setCreatingRoot] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
   const submittingRoot = useRef(false);
 
   const tree = buildTree(files);
-
   const filteredTree = filterTree(tree, searchQuery);
 
   const handleRootCreate = async (type, name) => {
     if (submittingRoot.current) return;
-
     const dup = files.find(
       (f) => f.path === "/" && f.name.toLowerCase() === name.toLowerCase(),
     );
-
     if (dup) {
       toast.error(`A ${dup.type} named "${name}" already exists here.`);
       return;
     }
-
     submittingRoot.current = true;
 
     try {
       if (type === "file") {
-        const newFile = await createFile({
-          workspaceId,
-          name,
-          path: "/",
-        });
-
+        const newFile = await createFile({ workspaceId, name, path: "/" });
         onFileSelect(newFile._id);
-
         toast.success(`Created ${name}`);
       } else {
-        await createFolder({
-          workspaceId,
-          name,
-          path: "/",
-        });
-
+        await createFolder({ workspaceId, name, path: "/" });
         toast.success(`Created folder ${name}`);
       }
     } catch (err) {
@@ -511,24 +438,20 @@ const FileExplorer = ({
   };
 
   return (
-    <div className="file-explorer w-64 bg-gray-900/60 backdrop-blur-md border-r border-gray-800/60 flex flex-col shrink-0 text-gray-300">
-      <div className="explorer-header flex items-center justify-between px-4 py-3 border-b border-gray-800/60">
-        <span className="explorer-title text-xs font-semibold tracking-wider text-gray-500 uppercase">
-          FILES
-        </span>
-
+    <div className="file-explorer">
+      <div className="explorer-header">
+        <span className="explorer-title">Files</span>
         {canEdit && (
-          <div className="explorer-header-actions flex items-center gap-1">
+          <div className="explorer-header-actions">
             <button
-              className="btn-icon w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white transition"
+              className="btn-icon-tiny"
               title="New File"
               onClick={() => setCreatingRoot("file")}
             >
               <FilePlus size={14} />
             </button>
-
             <button
-              className="btn-icon w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-400 hover:text-white transition"
+              className="btn-icon-tiny"
               title="New Folder"
               onClick={() => setCreatingRoot("folder")}
             >
@@ -538,17 +461,23 @@ const FileExplorer = ({
         )}
       </div>
 
-      <div className="px-3 py-2 border-b border-gray-800/60">
-        <input
-          type="text"
-          placeholder="Search files..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-gray-800/60 border border-gray-700/60 text-white rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500/50"
-        />
+      <div className="explorer-search">
+        <div className="relative">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+          />
+          <input
+            type="text"
+            placeholder="Search files..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="explorer-search-input pl-9"
+          />
+        </div>
       </div>
 
-      <div className="explorer-list flex-1 overflow-y-auto pb-4 custom-scrollbar">
+      <div className="explorer-list">
         {creatingRoot === "file" && (
           <div className="px-3 mb-1">
             <InlineInput
@@ -558,7 +487,6 @@ const FileExplorer = ({
             />
           </div>
         )}
-
         {creatingRoot === "folder" && (
           <div className="px-3 mb-1">
             <InlineInput
@@ -570,18 +498,14 @@ const FileExplorer = ({
         )}
 
         {files.length === 0 && !creatingRoot && (
-          <p className="explorer-empty text-sm text-gray-500 text-center p-6 italic">
+          <p className="explorer-empty">
             No files yet. Create one to start coding.
           </p>
         )}
 
         {filteredTree.length === 0 &&
           searchQuery.trim() &&
-          files.length > 0 && (
-            <p className="text-sm text-gray-500 text-center p-6 italic">
-              No files found
-            </p>
-          )}
+          files.length > 0 && <p className="explorer-empty">No files found</p>}
 
         {filteredTree.map((node) => (
           <TreeNode

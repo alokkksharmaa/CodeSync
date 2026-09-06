@@ -23,51 +23,46 @@ const CommentsPanel = ({ workspaceId, socket }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const commentsEndRef = useRef(null);
 
-  // Load comments
   useEffect(() => {
     const loadComments = async () => {
       try {
         const data = await fetchComments(workspaceId);
-        setComments(data.reverse()); // Show oldest first
-        setLoading(false);
-      } catch (error) {
+        setComments(data.reverse());
+      } catch {
         toast.error("Failed to load comments");
+      } finally {
         setLoading(false);
       }
     };
     loadComments();
   }, [workspaceId]);
 
-  // Socket.IO listeners for real-time updates
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("new_comment", (comment) => {
+    const onNew = (comment) => {
       setComments((prev) => [...prev, comment]);
       scrollToBottom();
-    });
-
-    socket.on("comment_updated", (updatedComment) => {
+    };
+    const onUpdate = (updated) => {
       setComments((prev) =>
-        prev.map((c) => (c._id === updatedComment._id ? updatedComment : c)),
+        prev.map((c) => (c._id === updated._id ? updated : c)),
       );
-    });
-
-    socket.on("comment_deleted", ({ commentId }) => {
+    };
+    const onDelete = ({ commentId }) => {
       setComments((prev) => prev.filter((c) => c._id !== commentId));
-    });
+    };
 
-    socket.on("reaction_updated", (updatedComment) => {
-      setComments((prev) =>
-        prev.map((c) => (c._id === updatedComment._id ? updatedComment : c)),
-      );
-    });
+    socket.on("new_comment", onNew);
+    socket.on("comment_updated", onUpdate);
+    socket.on("comment_deleted", onDelete);
+    socket.on("reaction_updated", onUpdate);
 
     return () => {
-      socket.off("new_comment");
-      socket.off("comment_updated");
-      socket.off("comment_deleted");
-      socket.off("reaction_updated");
+      socket.off("new_comment", onNew);
+      socket.off("comment_updated", onUpdate);
+      socket.off("comment_deleted", onDelete);
+      socket.off("reaction_updated", onUpdate);
     };
   }, [socket]);
 
@@ -83,19 +78,15 @@ const CommentsPanel = ({ workspaceId, socket }) => {
       const comment = await createComment(workspaceId, newComment);
       setComments((prev) => [...prev, comment]);
       setNewComment("");
-
-      // Notify others via socket
       socket?.emit("comment_added", { workspaceId, comment });
-
       scrollToBottom();
-    } catch (error) {
+    } catch {
       toast.error("Failed to post comment");
     }
   };
 
   const handleEdit = async (commentId) => {
     if (!editText.trim()) return;
-
     try {
       const updated = await updateComment(commentId, editText);
       setComments((prev) =>
@@ -103,28 +94,21 @@ const CommentsPanel = ({ workspaceId, socket }) => {
       );
       setEditingId(null);
       setEditText("");
-
-      // Notify others via socket
       socket?.emit("comment_updated", { workspaceId, comment: updated });
-
       toast.success("Comment updated");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update comment");
     }
   };
 
   const handleDelete = async (commentId) => {
     if (!window.confirm("Delete this comment?")) return;
-
     try {
       await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c._id !== commentId));
-
-      // Notify others via socket
       socket?.emit("comment_deleted", { workspaceId, commentId });
-
       toast.success("Comment deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete comment");
     }
   };
@@ -135,12 +119,9 @@ const CommentsPanel = ({ workspaceId, socket }) => {
       setComments((prev) =>
         prev.map((c) => (c._id === commentId ? updated : c)),
       );
-
-      // Notify others via socket
       socket?.emit("reaction_toggled", { workspaceId, comment: updated });
-
       setShowEmojiPicker(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add reaction");
     }
   };
@@ -172,10 +153,8 @@ const CommentsPanel = ({ workspaceId, socket }) => {
 
   const groupReactions = (reactions) => {
     const grouped = {};
-    reactions.forEach((r) => {
-      if (!grouped[r.emoji]) {
-        grouped[r.emoji] = [];
-      }
+    (reactions || []).forEach((r) => {
+      if (!grouped[r.emoji]) grouped[r.emoji] = [];
       grouped[r.emoji].push(r);
     });
     return grouped;
@@ -199,7 +178,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
 
   return (
     <div className="comments-panel">
-      {/* Header */}
       <div className="comments-panel-header">
         <h3 className="comments-panel-title">
           <MessageSquare size={14} /> Comments
@@ -207,8 +185,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
         </h3>
       </div>
 
-      {/* Comments List */}
-      <div className="comments-list">
+      <div className="comments-list custom-scrollbar">
         {comments.length === 0 ? (
           <div className="comments-empty">
             <div className="comments-empty-icon">
@@ -220,7 +197,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
         ) : (
           comments.map((comment) => (
             <div key={comment._id} className="comment-item">
-              {/* Header */}
               <div className="comment-header">
                 <div className="comment-user-info">
                   <div className="comment-avatar">
@@ -237,7 +213,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                   </div>
                 </div>
 
-                {/* Actions for own comments */}
                 {comment.userId === user?.id && (
                   <div className="comment-actions">
                     <button
@@ -260,7 +235,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                 )}
               </div>
 
-              {/* Comment Text */}
               {editingId === comment._id ? (
                 <div className="comment-edit-form">
                   <textarea
@@ -290,9 +264,8 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                 <p className="comment-text">{comment.text}</p>
               )}
 
-              {/* Reactions */}
               <div className="comment-reactions">
-                {Object.entries(groupReactions(comment.reactions || [])).map(
+                {Object.entries(groupReactions(comment.reactions)).map(
                   ([emoji, users]) => {
                     const hasReacted = users.some((u) => u.userId === user?.id);
                     return (
@@ -301,7 +274,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                         onClick={() => handleReaction(comment._id, emoji)}
                         className={`reaction-btn ${hasReacted ? "reacted" : ""}`}
                         title={users.map((u) => u.username).join(", ")}
-                        aria-label={`${emoji} reaction by ${users.length} user${users.length > 1 ? "s" : ""}`}
                       >
                         <span className="reaction-emoji">{emoji}</span>
                         <span className="reaction-count">{users.length}</span>
@@ -310,7 +282,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                   },
                 )}
 
-                {/* Add Reaction Button */}
                 <div className="add-reaction-wrapper">
                   <button
                     onClick={() =>
@@ -320,12 +291,10 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                     }
                     className="add-reaction-btn"
                     title="Add reaction"
-                    aria-label="Add reaction"
                   >
                     <Plus size={12} />
                   </button>
 
-                  {/* Emoji Picker */}
                   {showEmojiPicker === comment._id && (
                     <div className="emoji-picker">
                       {EMOJI_OPTIONS.map((emoji) => (
@@ -333,7 +302,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                           key={emoji}
                           onClick={() => handleReaction(comment._id, emoji)}
                           className="emoji-option"
-                          aria-label={`React with ${emoji}`}
                         >
                           {emoji}
                         </button>
@@ -348,7 +316,6 @@ const CommentsPanel = ({ workspaceId, socket }) => {
         <div ref={commentsEndRef} />
       </div>
 
-      {/* Input Form */}
       <form onSubmit={handleSubmit} className="comments-input-form">
         <textarea
           value={newComment}

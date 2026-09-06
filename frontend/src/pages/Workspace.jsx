@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 import { fetchWorkspace } from "../services/workspaceApi";
-import api from "../services/api"; // Added for leaveSession
+import api from "../services/api";
 import { fetchFileContent } from "../services/fileApi";
 import { executeCode } from "../services/codeExecutionApi";
 import FileExplorer from "../components/FileExplorer";
@@ -34,16 +34,22 @@ import {
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 const USER_COLORS = [
-  "#7c6aff",
-  "#f87171",
-  "#4ade80",
-  "#facc15",
-  "#38bdf8",
-  "#fb923c",
-  "#c084fc",
+  "#0ea5e9",
+  "#8b5cf6",
+  "#f43f5e",
+  "#10b981",
+  "#f59e0b",
+  "#ec4899",
+  "#06b6d4",
 ];
 const randomColor = () =>
   USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+
+const roleBadgeClass = (role) => {
+  if (role === "owner") return "badge-owner";
+  if (role === "editor") return "badge-editor";
+  return "badge-viewer";
+};
 
 const Workspace = () => {
   const { id: workspaceId } = useParams();
@@ -78,7 +84,6 @@ const Workspace = () => {
     toast.success("Refreshing workspace...", { duration: 1000 });
   }, []);
 
-  // ── Load workspace & initial file list ────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       try {
@@ -101,41 +106,28 @@ const Workspace = () => {
     load();
   }, [workspaceId, refreshKey]);
 
-  // ── Open specific file ───────────────────────────────────────────────────
   useEffect(() => {
     if (!activeFileId || loading) return;
 
     const openFile = async () => {
       try {
-        //console.log('[Workspace] Switching to file:', activeFileId);
-
-        // Save previous file immediately before switching
         if (
           previousFileRef.current &&
           previousFileRef.current !== activeFileId &&
           currentCodeRef.current !== undefined
         ) {
-          //console.log('[Workspace] Saving previous file:', previousFileRef.current, 'with', currentCodeRef.current.length, 'chars');
-
-          // Immediate save to database
           try {
             await api.put(`/api/files/${previousFileRef.current}`, {
               content: currentCodeRef.current,
             });
-            //console.log('[Workspace] Previous file saved successfully');
           } catch (saveErr) {
             console.error("[Workspace] Failed to save previous file:", saveErr);
           }
         }
 
-        // Load new file
         const file = await fetchFileContent(activeFileId);
-
-        // Update refs
         previousFileRef.current = activeFileId;
         currentCodeRef.current = file.content || "";
-
-        // Mark as remote change to prevent socket emission
         isRemoteChange.current = true;
         setCode(file.content || "");
 
@@ -150,7 +142,6 @@ const Workspace = () => {
     openFile();
   }, [activeFileId, loading]);
 
-  // ── Socket.IO Setup ───────────────────────────────────────────────────────
   useEffect(() => {
     if (loading || !workspace) return;
 
@@ -186,28 +177,18 @@ const Workspace = () => {
 
     socket.on("file_created", (newFile) => {
       setFiles((prev) => {
-        // Check if file already exists by ID
         const exists = prev.some((f) => String(f._id) === String(newFile._id));
-        if (exists) {
-          //console.log('[socket] file_created: File already exists, skipping', newFile._id);
-          return prev;
-        }
-        //console.log('[socket] file_created: Adding new file', newFile._id);
+        if (exists) return prev;
         return [...prev, newFile];
       });
     });
 
     socket.on("folder_created", (newFolder) => {
       setFiles((prev) => {
-        // Check if folder already exists by ID
         const exists = prev.some(
           (f) => String(f._id) === String(newFolder._id),
         );
-        if (exists) {
-          //console.log('[socket] folder_created: Folder already exists, skipping', newFolder._id);
-          return prev;
-        }
-        //console.log('[socket] folder_created: Adding new folder', newFolder._id);
+        if (exists) return prev;
         return [...prev, newFolder];
       });
     });
@@ -267,9 +248,8 @@ const Workspace = () => {
   const handleCodeChange = useCallback(
     (e) => {
       const newCode = e.target.value;
-
       setCode(newCode);
-      currentCodeRef.current = newCode; // Update ref for saving
+      currentCodeRef.current = newCode;
 
       if (isRemoteChange.current) {
         isRemoteChange.current = false;
@@ -318,16 +298,16 @@ const Workspace = () => {
       );
 
       if (result.error) {
-        setExecutionOutput(`❌ Error:\n${result.error}`);
+        setExecutionOutput(`Error:\n${result.error}`);
         toast.error("Execution failed");
       } else {
         setExecutionOutput(
-          result.output || "✅ Code executed successfully (no output)",
+          result.output || "Code executed successfully (no output)",
         );
         toast.success("Code executed");
       }
     } catch (err) {
-      setExecutionOutput(`❌ Execution Error:\n${err.message}`);
+      setExecutionOutput(`Execution Error:\n${err.message}`);
       toast.error(err.message);
     } finally {
       setIsExecuting(false);
@@ -360,34 +340,28 @@ const Workspace = () => {
   if (loading)
     return (
       <div className="workspace-page">
-        <header
-          className="ws-topbar skeleton"
-          style={{ height: "var(--topbar-height)", borderRadius: 0 }}
-        />
+        <header className="ws-topbar skeleton ws-topbar-skeleton" />
         <div className="ws-skeleton-layout">
-          <div
-            style={{ width: "220px", height: "100%" }}
-            className="skeleton"
-          />
+          <div className="skeleton ws-sidebar-skeleton" />
           <div className="skeleton skeleton-editor" />
         </div>
       </div>
     );
 
   return (
-    <div className="workspace-page flex flex-col h-screen bg-[#0B0C10] overflow-hidden">
-      <header className="ws-topbar flex items-center justify-between px-4 sm:px-6 h-16 bg-gray-900/40 backdrop-blur-xl border-b border-gray-800/60 shrink-0 z-20">
-        <div className="ws-topbar-left flex items-center gap-4">
+    <div className="workspace-page">
+      <header className="ws-topbar">
+        <div className="ws-topbar-left">
           <button
-            className="btn btn-secondary w-8 h-8 p-0 flex items-center justify-center rounded-lg transition"
+            className="btn btn-secondary btn-icon"
             onClick={() => navigate("/dashboard")}
             title="Back to dashboard"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="ws-breadcrumb flex items-center gap-2">
+          <div className="ws-breadcrumb">
             <span
-              className="ws-breadcrumb-ws font-display text-lg font-semibold text-gray-200 hover:text-blue-400 cursor-pointer transition-colors"
+              className="ws-breadcrumb-ws"
               onClick={handleRefresh}
               title="Click to refresh"
             >
@@ -395,21 +369,19 @@ const Workspace = () => {
             </span>
             {activeFile && (
               <>
-                <span className="ws-breadcrumb-sep text-gray-600">/</span>
-                <span className="ws-breadcrumb-file text-gray-400 font-medium">
-                  {activeFile.name}
-                </span>
+                <span className="ws-breadcrumb-sep">/</span>
+                <span className="ws-breadcrumb-file">{activeFile.name}</span>
               </>
             )}
           </div>
         </div>
 
-        <div className="ws-topbar-right flex items-center gap-4">
-          <div className="presence-row flex items-center -space-x-2">
+        <div className="ws-topbar-right">
+          <div className="presence-row">
             {connectedUsers.map((u, i) => (
               <span
                 key={i}
-                className={`presence-avatar w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-[#0B0C10] shadow-sm ${u.role === "owner" ? "bg-violet-500/20 text-violet-400 border border-violet-500/30" : "bg-blue-500/20 text-blue-400 border border-blue-500/30"}`}
+                className={`presence-avatar ${u.role === "owner" ? "owner" : ""}`}
                 title={`${u.username} (${u.role})`}
               >
                 {u.username[0].toUpperCase()}
@@ -417,17 +389,13 @@ const Workspace = () => {
             ))}
           </div>
 
-          {connectedUsers.length > 0 && (
-            <span className="topbar-divider w-px h-6 bg-gray-700/60" />
-          )}
+          {connectedUsers.length > 0 && <span className="topbar-divider" />}
 
-          <span
-            className={`role-badge px-2.5 py-1 rounded-full text-xs font-semibold ${myRole === "owner" ? "bg-violet-500/15 text-violet-400 border border-violet-500/30" : myRole === "editor" ? "bg-blue-500/15 text-blue-400 border border-blue-500/30" : "bg-gray-500/15 text-gray-400 border border-gray-500/30"}`}
-          >
+          <span className={`role-badge ${roleBadgeClass(myRole)}`}>
             {myRole}
           </span>
 
-          <span className="topbar-divider w-px h-6 bg-gray-700/60" />
+          <span className="topbar-divider" />
 
           <VoiceChat
             socket={socketRef.current}
@@ -436,9 +404,9 @@ const Workspace = () => {
             username={user?.username}
           />
 
-          <span className="topbar-divider w-px h-6 bg-gray-700/60" />
+          <span className="topbar-divider" />
 
-          <div className="topbar-actions flex items-center gap-1.5">
+          <div className="topbar-actions">
             {activeFileId && canEdit && (
               <>
                 <VoiceInput
@@ -446,7 +414,7 @@ const Workspace = () => {
                   disabled={!canEdit || !activeFileId}
                 />
                 <button
-                  className="btn btn-primary px-4 py-1.5 rounded-lg text-sm transition flex items-center gap-2"
+                  className="btn btn-primary"
                   onClick={handleExecuteCode}
                   disabled={isExecuting}
                 >
@@ -460,11 +428,11 @@ const Workspace = () => {
                     </>
                   )}
                 </button>
-                <span className="topbar-divider w-px h-6 bg-gray-700/60" />
+                <span className="topbar-divider" />
               </>
             )}
             <button
-              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5 ${showComments ? "active" : ""}`}
+              className={`btn btn-ghost ${showComments ? "active" : ""}`}
               onClick={() => {
                 setShowMembers(false);
                 setShowHistory(false);
@@ -475,7 +443,7 @@ const Workspace = () => {
               <MessageSquare size={14} /> Comments
             </button>
             <button
-              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5 ${showActivity ? "active" : ""}`}
+              className={`btn btn-ghost ${showActivity ? "active" : ""}`}
               onClick={() => {
                 setShowMembers(false);
                 setShowHistory(false);
@@ -486,7 +454,7 @@ const Workspace = () => {
               <Activity size={14} /> Activity
             </button>
             <button
-              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5 ${showHistory ? "active" : ""}`}
+              className={`btn btn-ghost ${showHistory ? "active" : ""}`}
               onClick={() => {
                 setShowMembers(false);
                 setShowActivity(false);
@@ -497,7 +465,7 @@ const Workspace = () => {
               <History size={14} /> History
             </button>
             <button
-              className={`btn btn-ghost px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5 ${showMembers ? "active" : ""}`}
+              className={`btn btn-ghost ${showMembers ? "active" : ""}`}
               onClick={() => {
                 setShowHistory(false);
                 setShowActivity(false);
@@ -509,14 +477,14 @@ const Workspace = () => {
             </button>
             {isOwner && (
               <button
-                className="btn btn-primary px-4 py-1.5 rounded-lg text-sm transition ml-1 flex items-center gap-1.5"
+                className="btn btn-primary"
                 onClick={() => setShowInvite(true)}
               >
                 <UserPlus size={14} /> Invite
               </button>
             )}
             <button
-              className="btn btn-ghost btn-error px-3 py-1.5 rounded-lg text-sm transition ml-1 flex items-center gap-1.5"
+              className="btn btn-ghost btn-error"
               onClick={handleLeaveSession}
             >
               <LogOut size={14} /> Leave
@@ -525,7 +493,7 @@ const Workspace = () => {
         </div>
       </header>
 
-      <div className="workspace-layout flex-1 flex overflow-hidden">
+      <div className="workspace-layout">
         <FileExplorer
           workspaceId={workspaceId}
           socket={socketRef.current}
@@ -536,21 +504,17 @@ const Workspace = () => {
           canEdit={canEdit}
         />
 
-        <div className="editor-container flex-1 flex flex-col relative bg-[#0B0C10]">
+        <div className="editor-container">
           {myRole === "viewer" && (
-            <div className="viewer-banner bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-sm py-2 px-4 flex items-center justify-center gap-2 backdrop-blur-md sticky top-0 z-10 font-medium">
+            <div className="viewer-banner">
               <Eye size={14} /> Read-only access — contact the owner to request
               edit permissions.
             </div>
           )}
           {!activeFileId ? (
-            <div className="no-file-selected flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
-              <FileCode
-                size={44}
-                strokeWidth={1.5}
-                className="opacity-40 mb-4"
-              />
-              <p className="text-lg">Select a file to start coding</p>
+            <div className="no-file-selected">
+              <FileCode size={44} strokeWidth={1.5} className="opacity-40" />
+              <p>Select a file to start coding</p>
             </div>
           ) : (
             <>

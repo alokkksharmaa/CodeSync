@@ -31,14 +31,9 @@ const ActivityFeed = ({ socket, workspaceId }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  //console.log('[ActivityFeed] Render - workspaceId:', workspaceId, 'activities count:', activities.length, 'loading:', loading);
-
   const loadActivities = async () => {
     try {
-      //console.log('[ActivityFeed] Loading activities for workspace:', workspaceId);
       const res = await api.get(`/api/workspaces/${workspaceId}/activity`);
-      //console.log('[ActivityFeed] Received activities:', res.data);
-      //console.log('[ActivityFeed] Activities count:', res.data?.length);
       setActivities(res.data);
     } catch (error) {
       console.error("[ActivityFeed] Error loading activities:", error);
@@ -62,28 +57,23 @@ const ActivityFeed = ({ socket, workspaceId }) => {
     new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="activity-feed-panel w-72 bg-gray-900/60 backdrop-blur-md border-l border-gray-800/60 flex flex-col shrink-0 text-gray-300">
-      <div className="panel-header flex items-center justify-between px-4 py-3 border-b border-gray-800/60 mb-2">
-        <span className="panel-title text-xs font-semibold tracking-wider text-gray-500 uppercase flex items-center gap-1.5">
+    <div className="activity-feed-panel">
+      <div className="panel-header">
+        <span className="panel-title">
           <Activity size={13} /> Activity
         </span>
       </div>
-      <div className="panel-list flex-1 overflow-y-auto p-2 custom-scrollbar">
+      <div className="panel-list custom-scrollbar">
         {loading ? (
           <div className="p-3">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="skeleton skeleton-activity h-10 w-full mb-2 rounded bg-white/5"
-              />
+              <div key={i} className="skeleton skeleton-activity" />
             ))}
           </div>
         ) : activities.length === 0 ? (
-          <p className="activity-empty text-sm text-gray-500 text-center p-6 italic">
-            No recent activity
-          </p>
+          <p className="activity-empty">No recent activity</p>
         ) : (
-          <div className="activity-list flex flex-col gap-1.5">
+          <div className="activity-list">
             {activities.map((act, i) => {
               const def = ACTION_LABELS[act.actionType] || {
                 verb: "acted",
@@ -99,40 +89,35 @@ const ActivityFeed = ({ socket, workspaceId }) => {
                 act.actionType === "MEMBER_REMOVED";
 
               return (
-                <div
-                  key={act._id || i}
-                  className="activity-item flex flex-col p-2 hover:bg-white/5 rounded-lg transition group"
-                >
-                  <span className="activity-time text-xs text-gray-500 mb-1 font-medium">
+                <div key={act._id || i} className="activity-item">
+                  <span className="activity-time">
                     {formatTime(act.createdAt)}
                   </span>
-                  <div className="activity-content text-sm text-gray-300 flex items-start gap-2 leading-tight">
-                    <span className="mt-0.5 text-gray-400 opacity-80 shrink-0">
+                  <div className="activity-content">
+                    <span className="mt-0.5 text-text-muted opacity-80 shrink-0 inline-block mr-2">
                       <Icon size={13} />
                     </span>
-                    <div className="flex-1">
-                      <strong className="font-semibold text-gray-200">
-                        {act.metadata?.username || "User"}
-                      </strong>{" "}
-                      <span className="text-gray-400">{def.verb}</span>
+                    <div className="inline">
+                      <strong>{act.metadata?.username || "User"}</strong>{" "}
+                      <span>{def.verb}</span>
                       {isInviteActivity && act.metadata?.invitedUsername ? (
-                        <span className="text-blue-400/80 ml-1">
+                        <span className="text-secondary-hover ml-1">
                           {act.metadata.invitedUsername}
                         </span>
                       ) : null}
                       {isRoleChangeActivity && act.metadata?.targetUsername ? (
                         <>
-                          <span className="text-blue-400/80 ml-1">
+                          <span className="text-secondary-hover ml-1">
                             {act.metadata.targetUsername}
                           </span>
-                          <span className="text-gray-500 ml-1 text-xs">
+                          <span className="text-muted ml-1 text-xs">
                             ({act.metadata.oldRole} → {act.metadata.newRole})
                           </span>
                         </>
                       ) : null}
                       {isMemberRemovedActivity &&
                       act.metadata?.removedUsername ? (
-                        <span className="text-red-400/80 ml-1">
+                        <span className="text-error ml-1">
                           {act.metadata.removedUsername}
                         </span>
                       ) : null}
@@ -141,13 +126,13 @@ const ActivityFeed = ({ socket, workspaceId }) => {
                       !isRoleChangeActivity &&
                       !isMemberRemovedActivity &&
                       act.metadata?.name ? (
-                        <span className="text-blue-400/80 ml-1 font-mono text-xs bg-blue-500/10 px-1 rounded break-all">
+                        <span className="text-accent-hover ml-1 font-mono text-xs bg-accent-subtle px-1.5 py-0.5 rounded break-all">
                           {act.metadata.name}
                         </span>
                       ) : null}
                       {act.metadata?.role &&
                       act.actionType === "USER_JOINED" ? (
-                        <span className="text-green-400/80 ml-1 text-xs">
+                        <span className="text-success ml-1 text-xs">
                           as {act.metadata.role}
                         </span>
                       ) : null}

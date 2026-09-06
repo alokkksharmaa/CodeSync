@@ -40,42 +40,37 @@ const TIME_AGO = (date) => {
   });
 };
 
+const roleBadgeClass = (role) => {
+  if (role === "owner") return "badge-owner";
+  if (role === "editor") return "badge-editor";
+  return "badge-viewer";
+};
+
 // ─── Workspace Card ───────────────────────────────────────────────────────────
 const WorkspaceCard = ({ workspace, role, onClick }) => {
-  const langColor = LANG_COLORS[workspace.language] || "#635bff";
+  const langColor = LANG_COLORS[workspace.language] || "#8b5cf6";
 
   const handlePrefetch = () => fetchWorkspace(workspace._id).catch(() => {});
 
   return (
-    <div
-      className="ws-card flex flex-col p-5 gap-3 rounded-xl border border-gray-700/60 bg-gray-800/60 hover:border-blue-500/40 hover:shadow-xl hover:-translate-y-1 transition duration-300 cursor-pointer backdrop-blur-sm"
-      onMouseEnter={handlePrefetch}
-      onClick={onClick}
-    >
-      <div className="ws-card-top flex items-center justify-between mb-2">
+    <div className="ws-card" onMouseEnter={handlePrefetch} onClick={onClick}>
+      <div className="ws-card-top">
         <span
-          className="language-badge px-2.5 py-1 rounded-full text-xs font-medium"
+          className="language-badge"
           style={{
-            background: langColor + "1a",
+            background: `${langColor}1a`,
             color: langColor,
-            border: `1px solid ${langColor}30`,
+            border: `1px solid ${langColor}35`,
           }}
         >
           {workspace.language || "js"}
         </span>
-        <span
-          className={`role-badge px-2.5 py-1 rounded-full text-xs font-semibold ${role === "owner" ? "bg-violet-500/15 text-violet-400 border border-violet-500/30" : role === "editor" ? "bg-blue-500/15 text-blue-400 border border-blue-500/30" : "bg-gray-500/15 text-gray-400 border border-gray-500/30"}`}
-        >
-          {role}
-        </span>
+        <span className={`role-badge ${roleBadgeClass(role)}`}>{role}</span>
       </div>
-      <h3
-        className="ws-card-name text-lg font-semibold text-gray-100 truncate"
-        title={workspace.name}
-      >
+      <h3 className="ws-card-name" title={workspace.name}>
         {workspace.name}
       </h3>
-      <p className="ws-card-meta text-sm text-gray-400 flex items-center gap-1.5">
+      <p className="ws-card-meta">
         {role !== "owner" && workspace.owner?.username
           ? `@${workspace.owner.username} · `
           : ""}
@@ -131,47 +126,27 @@ const RecentActivity = ({ workspaces, refreshTrigger }) => {
   };
 
   return (
-    <div className="activity-panel rounded-xl border border-gray-700/60 bg-gray-800/40 backdrop-blur-md overflow-hidden">
-      <div className="activity-panel-header px-5 py-4 border-b border-gray-700/60 text-lg font-semibold text-gray-200">
-        Recent Activity
-      </div>
-      <div className="activity-list-mini p-3">
+    <div className="activity-panel">
+      <div className="activity-panel-header">Recent Activity</div>
+      <div className="activity-list-mini">
         {loading ? (
-          <div style={{ padding: "12px 16px" }}>
+          <div className="activity-loading">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="skeleton skeleton-activity" />
             ))}
           </div>
         ) : activities.length === 0 ? (
-          <p className="no-activity-mini text-gray-500 text-center py-4">
-            No recent activity
-          </p>
+          <p className="no-activity-mini">No recent activity</p>
         ) : (
           activities.map((act) => (
-            <div
-              key={act._id}
-              className="activity-item-mini flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 transition"
-            >
-              <span className="activity-dot mt-1.5 w-2 h-2 rounded-full bg-blue-500/50 flex-shrink-0" />
-              <span className="activity-text text-sm text-gray-300 flex-1 leading-relaxed">
-                <strong className="text-gray-200 font-medium">
-                  {act.metadata?.username || "User"}
-                </strong>{" "}
-                <span className="text-gray-400">
-                  {ACTION_LABEL[act.actionType] || "acted"}
-                </span>
-                {act.metadata?.name ? (
-                  <span className="text-gray-300 ml-1">
-                    {" "}
-                    {act.metadata.name}
-                  </span>
-                ) : (
-                  ""
-                )}
+            <div key={act._id} className="activity-item-mini">
+              <span className="activity-dot" />
+              <span className="activity-text">
+                <strong>{act.metadata?.username || "User"}</strong>{" "}
+                <span>{ACTION_LABEL[act.actionType] || "acted"}</span>
+                {act.metadata?.name ? <span> {act.metadata.name}</span> : null}
               </span>
-              <span className="activity-time text-xs text-gray-500 whitespace-nowrap">
-                {TIME_AGO(act.createdAt)}
-              </span>
+              <span className="activity-time">{TIME_AGO(act.createdAt)}</span>
             </div>
           ))
         )}
@@ -190,95 +165,62 @@ const Sidebar = ({
   onRefresh,
   onSettings,
 }) => (
-  <aside className="sidebar w-64 bg-gray-900/80 backdrop-blur-xl border-r border-gray-700/60 flex flex-col flex-shrink-0 h-screen sticky top-0 z-10">
+  <aside className="sidebar">
     <div
-      className="sidebar-logo flex items-center gap-3 px-6 py-5 border-b border-gray-700/60 cursor-pointer hover:bg-white/5 transition"
+      className="sidebar-logo"
       onClick={onRefresh}
       title="Refresh workspaces"
     >
-      <span className="logo-icon w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/15 text-blue-400">
+      <span className="logo-icon">
         <Zap size={16} strokeWidth={2.5} />
       </span>
-      <span className="logo-text text-xl font-bold tracking-tight text-white font-display">
-        CodeSync
-      </span>
+      <span className="logo-text">CodeSync</span>
     </div>
 
-    <nav className="sidebar-nav flex-1 p-4 flex flex-col gap-1 overflow-y-auto">
-      <span className="sidebar-section-label text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-2">
-        Navigation
-      </span>
+    <nav className="sidebar-nav">
+      <span className="sidebar-section-label">Navigation</span>
 
       <div
-        className={`sidebar-item flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${activeTab === "my" ? "bg-blue-500/15 text-blue-400" : "text-gray-400 hover:bg-white/5 hover:text-gray-200"}`}
+        className={`sidebar-item ${activeTab === "my" ? "active" : ""}`}
         onClick={() => onTabChange("my")}
       >
-        <div className="flex items-center gap-3">
-          <LayoutGrid
-            size={17}
-            className={`transition-colors ${activeTab === "my" ? "text-blue-500" : "text-gray-500 group-hover:text-blue-400"}`}
-          />
-          <span className="font-medium">My Workspaces</span>
-        </div>
+        <LayoutGrid size={17} className="sidebar-item-icon" />
+        <span>My Workspaces</span>
         {workspaceCount.my > 0 && (
-          <span
-            className={`sidebar-item-count px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === "my" ? "bg-blue-500/20 text-blue-300" : "bg-gray-800 text-gray-400"}`}
-          >
-            {workspaceCount.my}
-          </span>
+          <span className="sidebar-item-count">{workspaceCount.my}</span>
         )}
       </div>
 
       <div
-        className={`sidebar-item flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group ${activeTab === "shared" ? "bg-blue-500/15 text-blue-400" : "text-gray-400 hover:bg-white/5 hover:text-gray-200"}`}
+        className={`sidebar-item ${activeTab === "shared" ? "active" : ""}`}
         onClick={() => onTabChange("shared")}
       >
-        <div className="flex items-center gap-3">
-          <Users
-            size={17}
-            className={`transition-colors ${activeTab === "shared" ? "text-blue-500" : "text-gray-500 group-hover:text-blue-400"}`}
-          />
-          <span className="font-medium">Shared With Me</span>
-        </div>
+        <Users size={17} className="sidebar-item-icon" />
+        <span>Shared With Me</span>
         {workspaceCount.shared > 0 && (
-          <span
-            className={`sidebar-item-count px-2 py-0.5 rounded-full text-xs font-medium ${activeTab === "shared" ? "bg-blue-500/20 text-blue-300" : "bg-gray-800 text-gray-400"}`}
-          >
-            {workspaceCount.shared}
-          </span>
+          <span className="sidebar-item-count">{workspaceCount.shared}</span>
         )}
       </div>
     </nav>
 
-    <div className="sidebar-footer p-4 border-t border-gray-700/60 bg-gray-900/40">
-      <div className="sidebar-user flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition mb-2">
-        <div
-          className="sidebar-avatar w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
-          style={{
-            background: "var(--accent-subtle)",
-            color: "var(--accent)",
-            border: "1px solid var(--accent-glow)",
-          }}
-        >
+    <div className="sidebar-footer">
+      <div className="sidebar-user" onClick={onSettings}>
+        <div className="sidebar-avatar">
           {user?.username?.[0]?.toUpperCase()}
         </div>
-        <div className="sidebar-user-info flex-1 overflow-hidden">
-          <div className="sidebar-username text-sm font-semibold text-white truncate">
-            @{user?.username}
-          </div>
-          <div className="sidebar-user-role text-xs text-gray-400 truncate">
-            {user?.email}
-          </div>
+        <div className="sidebar-user-info">
+          <div className="sidebar-username">@{user?.username}</div>
+          <div className="sidebar-user-role">{user?.email}</div>
         </div>
       </div>
       <button
-        className="btn btn-ghost w-full flex items-center justify-start gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white transition mb-1"
+        className="btn btn-ghost w-full justify-start gap-2"
         onClick={onSettings}
       >
         <Settings size={15} /> Settings
       </button>
       <button
-        className="btn btn-ghost btn-error w-full flex items-center justify-start gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition"
+        className="btn btn-ghost btn-error w-full justify-start gap-2"
         onClick={onLogout}
       >
         <LogOut size={15} /> Sign out
@@ -313,7 +255,6 @@ const Dashboard = () => {
     loadWorkspaces();
   }, [loadWorkspaces]);
 
-  // Socket: listen for activity updates across all workspaces
   useEffect(() => {
     if (workspaces.length === 0) return;
     const socket = io(BACKEND_URL, { transports: ["websocket"] });
@@ -335,6 +276,7 @@ const Dashboard = () => {
     toast.success("Logged out");
     navigate("/login");
   };
+
   const handleCreated = (data) => {
     setWorkspaces((prev) => [
       { workspace: data.workspace, role: "owner", addedAt: new Date() },
@@ -361,26 +303,26 @@ const Dashboard = () => {
         onSettings={() => navigate("/settings")}
       />
 
-      <main className="dashboard-main flex-1 flex flex-col min-w-0 bg-[#0B0C10]">
-        <div className="dashboard-header px-8 py-8 md:py-10 border-b border-gray-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-900/20 backdrop-blur-sm sticky top-0 z-0">
+      <main className="dashboard-main">
+        <div className="dashboard-header">
           <div>
-            <h1 className="dashboard-heading text-3xl md:text-4xl font-semibold tracking-tight text-white mb-2 font-display">
+            <h1 className="dashboard-heading">
               {activeTab === "my" ? "My Workspaces" : "Shared With Me"}
             </h1>
-            <p className="dashboard-meta text-lg text-gray-400">
+            <p className="dashboard-meta">
               {!loading &&
                 `${shown.length} workspace${shown.length !== 1 ? "s" : ""}`}
             </p>
           </div>
           <button
-            className="btn btn-primary px-5 py-2.5 rounded-lg shadow-lg transition-all hover:-translate-y-0.5"
+            className="btn btn-primary"
             onClick={() => setShowCreate(true)}
           >
             <Plus size={16} strokeWidth={2.5} /> New Workspace
           </button>
         </div>
 
-        <div className="dashboard-content-layout flex-1 p-8 grid lg:grid-cols-[1fr_320px] gap-8 overflow-y-auto">
+        <div className="dashboard-content-layout">
           <div className="workspaces-column">
             <div className="ws-section">
               {loading ? (
@@ -390,22 +332,22 @@ const Dashboard = () => {
                   ))}
                 </div>
               ) : shown.length === 0 ? (
-                <div className="ws-empty flex flex-col items-center justify-center py-20 px-4 text-center border border-dashed border-gray-700/60 rounded-2xl bg-gray-800/20">
-                  <span className="mb-4 w-14 h-14 rounded-full flex items-center justify-center bg-gray-800/60 text-gray-600">
+                <div className="ws-empty">
+                  <span className="w-14 h-14 rounded-full flex items-center justify-center bg-elevated text-muted">
                     {activeTab === "my" ? (
                       <FolderPlus size={24} />
                     ) : (
                       <Users size={24} />
                     )}
                   </span>
-                  <p className="text-lg text-gray-400 mb-6">
+                  <p>
                     {activeTab === "my"
                       ? "You haven't created any workspaces yet."
                       : "No workspaces have been shared with you."}
                   </p>
                   {activeTab === "my" && (
                     <button
-                      className="btn btn-secondary px-4 py-2 rounded-lg transition"
+                      className="btn btn-secondary"
                       onClick={() => setShowCreate(true)}
                     >
                       Create workspace
@@ -413,7 +355,7 @@ const Dashboard = () => {
                   )}
                 </div>
               ) : (
-                <div className="workspace-grid grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="workspace-grid">
                   {shown.map(({ workspace, role }) => (
                     <WorkspaceCard
                       key={workspace._id}

@@ -1,14 +1,14 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { Suspense, lazy, useState, useEffect } from 'react'
-import { useAuth } from './context/AuthContext'
-import ProtectedRoute from './routes/ProtectedRoute'
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Suspense, lazy, useState, useEffect } from "react";
+import { useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-const Login = lazy(() => import('./pages/Login'))
-const Signup = lazy(() => import('./pages/Signup'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const Workspace = lazy(() => import('./pages/Workspace'))
-const ProfileSettings = lazy(() => import('./pages/ProfileSettings'))
-const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Workspace = lazy(() => import("./pages/Workspace"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
 const RouteLoader = ({ children }) => {
   const [loading, setLoading] = useState(false);
@@ -25,13 +25,15 @@ const RouteLoader = ({ children }) => {
   return (
     <>
       {loading && (
-        <div className="fixed inset-0 bg-[#0B0C10]/40 backdrop-blur-md flex items-center justify-center z-[9999] transition-opacity duration-300">
-          <div className="flex flex-col items-center gap-4 bg-gray-900/80 p-6 rounded-2xl shadow-2xl border border-gray-700/50">
+        <div className="fixed inset-0 bg-base/60 backdrop-blur-md flex items-center justify-center z-9999 transition-opacity duration-300">
+          <div className="flex flex-col items-center gap-4 glass-strong p-6 rounded-2xl shadow-lg">
             <div className="relative w-12 h-12">
-              <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 border-4 border-accent/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-accent rounded-full animate-spin"></div>
             </div>
-            <p className="text-sm font-medium text-blue-400 tracking-widest uppercase animate-pulse">Loading</p>
+            <p className="text-sm font-medium text-accent-hover tracking-widest uppercase animate-pulse">
+              Loading
+            </p>
           </div>
         </div>
       )}
@@ -41,26 +43,83 @@ const RouteLoader = ({ children }) => {
 };
 
 const App = () => {
-  const { isAuthenticated, loading } = useAuth()
-  if (loading) return null
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
 
   return (
-    <Suspense fallback={<div className="fixed inset-0 bg-[#0B0C10] flex items-center justify-center z-50"><div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" /></div>}>
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 bg-base flex items-center justify-center z-50">
+          <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+        </div>
+      }
+    >
       <RouteLoader>
         <Routes>
           {/* Public routes */}
-          <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
-          <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} />
+          <Route
+            path="/login"
+            element={
+              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Signup />
+              )
+            }
+          />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/workspace/:id" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
-          <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
-          <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:id"
+            element={
+              <ProtectedRoute>
+                <Workspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={isAuthenticated ? "/dashboard" : "/login"}
+                replace
+              />
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Navigate
+                to={isAuthenticated ? "/dashboard" : "/login"}
+                replace
+              />
+            }
+          />
         </Routes>
       </RouteLoader>
     </Suspense>
-  )
-}
+  );
+};
 
-export default App
+export default App;

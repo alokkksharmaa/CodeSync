@@ -95,35 +95,24 @@ const Login = () => {
       </div>
 
       {/* ─── Right: Form ─── */}
-      <div className="auth-form-panel flex-1 flex items-center justify-center p-8 bg-[#0B0C10] relative z-10 w-full lg:w-1/2 border-l border-gray-800">
+      <div className="auth-form-panel">
         <div className="auth-card">
-          <div className="auth-header mb-8 text-center max-w-sm mx-auto">
-            <div className="auth-mobile-brand flex items-center justify-center gap-2 mb-6 md:hidden">
-              <span className="w-7 h-7 rounded-md bg-blue-500/15 text-blue-400 flex items-center justify-center">
+          <div className="auth-header">
+            <div className="auth-mobile-brand">
+              <span className="w-7 h-7 rounded-md bg-accent/15 text-accent-hover flex items-center justify-center">
                 <Zap size={14} strokeWidth={2.5} />
               </span>
-              <span className="text-xl font-bold tracking-tight text-white font-display">
+              <span className="text-xl font-bold tracking-tight text-text-primary font-display">
                 CodeSync
               </span>
             </div>
-            <h1 className="auth-title text-3xl md:text-4xl font-semibold tracking-tight text-white mb-2 font-display">
-              Welcome back
-            </h1>
-            <p className="auth-subtitle text-lg text-gray-400">
-              Sign in to your workspace
-            </p>
+            <h1 className="auth-title">Welcome back</h1>
+            <p className="auth-subtitle">Sign in to your workspace</p>
           </div>
 
-          <form
-            className="auth-form flex flex-col gap-5 max-w-sm mx-auto w-full"
-            onSubmit={handleSubmit}
-            noValidate
-          >
-            <div className="form-group flex flex-col gap-1.5">
-              <label
-                htmlFor="email"
-                className="form-label text-sm font-medium text-gray-300"
-              >
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">
                 Email
               </label>
               <input
@@ -131,7 +120,7 @@ const Login = () => {
                 name="email"
                 type="email"
                 ref={emailRef}
-                className="form-input h-12 w-full px-4 rounded-lg bg-gray-800/60 border border-gray-700/60 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 hover:border-blue-500/40 transition-all backdrop-blur-sm"
+                className="form-input"
                 placeholder="you@example.com"
                 value={form.email}
                 onChange={handleChange}
@@ -140,19 +129,16 @@ const Login = () => {
               />
             </div>
 
-            <div className="form-group flex flex-col gap-1.5">
-              <label
-                htmlFor="password"
-                className="form-label text-sm font-medium text-gray-300"
-              >
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">
                 Password
               </label>
-              <div className="password-input-wrapper relative flex items-center">
+              <div className="password-input-wrapper">
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  className="form-input h-12 w-full px-4 rounded-lg bg-gray-800/60 border border-gray-700/60 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 hover:border-blue-500/40 transition-all backdrop-blur-sm pr-12"
+                  className="form-input"
                   placeholder="Your password"
                   value={form.password}
                   onChange={handleChange}
@@ -161,7 +147,7 @@ const Login = () => {
                 />
                 <button
                   type="button"
-                  className="password-toggle absolute right-3 text-gray-400 hover:text-gray-200 p-1 rounded-md hover:bg-white/5 transition"
+                  className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -170,16 +156,14 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 my-1">
-              <div className="flex-1 h-px bg-gray-700" />
-              <span className="text-gray-500 text-xs">or</span>
-              <div className="flex-1 h-px bg-gray-700" />
+            <div className="auth-divider">
+              <span>or</span>
             </div>
 
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full h-12 rounded-lg border border-gray-700 bg-gray-800/60 text-white flex items-center justify-center gap-3 hover:bg-gray-700/60 transition-all"
+              className="btn btn-secondary w-full h-12"
             >
               <svg width="18" height="18" viewBox="0 0 48 48">
                 <path
@@ -204,23 +188,16 @@ const Login = () => {
 
             <button
               type="submit"
-              className={`btn btn-primary w-full h-12 mt-2 rounded-lg text-lg font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center ${loading ? "opacity-80 pointer-events-none" : ""}`}
+              className="btn btn-primary btn-full h-12"
               disabled={loading}
             >
-              {loading ? (
-                <span className="btn-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Sign in"
-              )}
+              {loading ? <span className="btn-spinner w-5 h-5" /> : "Sign in"}
             </button>
           </form>
 
-          <p className="auth-footer mt-8 text-center text-sm text-gray-400">
+          <p className="auth-footer">
             Don&apos;t have an account?{" "}
-            <Link
-              to="/signup"
-              className="auth-link text-blue-400 hover:text-blue-300 font-medium transition"
-            >
+            <Link to="/signup" className="auth-link">
               Create one
             </Link>
           </p>

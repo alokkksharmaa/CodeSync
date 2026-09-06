@@ -117,109 +117,30 @@ const ProfileSettings = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--bg-base)",
-        color: "var(--text-primary)",
-      }}
-    >
-      {/* Top bar */}
-      <div
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "var(--bg-surface)",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 720,
-            margin: "0 auto",
-            padding: "14px 24px",
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
+    <div className="min-h-screen bg-(--bg-base) text-(--text-primary)">
+      <header className="sticky top-0 z-50 border-b border-(--border-color) bg-(--bg-surface)">
+        <div className="mx-auto flex max-w-180 items-center gap-4 px-6 py-3.5">
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm flex items-center gap-1.5"
             onClick={() => navigate(-1)}
-            style={{ display: "flex", alignItems: "center", gap: 6 }}
           >
             <ArrowLeft size={14} /> Back
           </button>
-          <span style={{ fontSize: 16, fontWeight: 600 }}>
-            Profile &amp; Settings
-          </span>
+          <h1 className="text-base font-semibold">Profile &amp; Settings</h1>
         </div>
-      </div>
+      </header>
 
-      <div
-        style={{
-          maxWidth: 720,
-          margin: "0 auto",
-          padding: "32px 24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 24,
-        }}
-      >
-        {/* ── Profile ── */}
-        <section
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            padding: 24,
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text-secondary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 20,
-            }}
-          >
-            Profile
-          </h2>
-          <form
-            onSubmit={handleProfileSave}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
-          >
-            {/* Avatar row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                  background: "var(--accent-subtle)",
-                  color: "var(--accent)",
-                  border: "2px solid var(--accent-glow)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 22,
-                  fontWeight: 700,
-                  overflow: "hidden",
-                }}
-              >
+      <main className="mx-auto flex max-w-180 flex-col gap-6 px-6 py-8">
+        {/* Profile */}
+        <section className="card">
+          <h2 className="section-title">Profile</h2>
+          <form onSubmit={handleProfileSave} className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="profile-avatar shrink-0">
                 {profile.avatar ? (
                   <img
                     src={profile.avatar}
                     alt="avatar"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
                     onError={(e) => {
                       e.target.style.display = "none";
                     }}
@@ -228,7 +149,7 @@ const ProfileSettings = () => {
                   profile.username?.[0]?.toUpperCase() || "?"
                 )}
               </div>
-              <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+              <div className="form-group mb-0 flex-1">
                 <label className="form-label">Avatar URL</label>
                 <input
                   className="form-input"
@@ -242,14 +163,8 @@ const ProfileSettings = () => {
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
-              <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group mb-0">
                 <label className="form-label">Username</label>
                 <input
                   className="form-input"
@@ -262,7 +177,7 @@ const ProfileSettings = () => {
                   }
                 />
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group mb-0">
                 <label className="form-label">Email</label>
                 <input
                   className="form-input"
@@ -276,7 +191,7 @@ const ProfileSettings = () => {
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div className="flex justify-end">
               <button
                 type="submit"
                 className="btn btn-primary"
@@ -288,39 +203,12 @@ const ProfileSettings = () => {
           </form>
         </section>
 
-        {/* ── Editor Preferences ── */}
-        <section
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            padding: 24,
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text-secondary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 20,
-            }}
-          >
-            Editor Preferences
-          </h2>
-          <form
-            onSubmit={handleProfileSave}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                gap: 16,
-              }}
-            >
-              <div className="form-group" style={{ marginBottom: 0 }}>
+        {/* Editor Preferences */}
+        <section className="card">
+          <h2 className="section-title">Editor Preferences</h2>
+          <form onSubmit={handleProfileSave} className="flex flex-col gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="form-group mb-0">
                 <label className="form-label">Font Size</label>
                 <input
                   className="form-input"
@@ -339,10 +227,10 @@ const ProfileSettings = () => {
                   }
                 />
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group mb-0">
                 <label className="form-label">Key Binding</label>
                 <select
-                  className="form-input"
+                  className="form-input form-select"
                   value={profile.preferences.keyBinding}
                   onChange={(e) =>
                     setProfile((p) => ({
@@ -359,10 +247,10 @@ const ProfileSettings = () => {
                   <option value="emacs">Emacs</option>
                 </select>
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group mb-0">
                 <label className="form-label">Default Language</label>
                 <select
-                  className="form-input"
+                  className="form-input form-select"
                   value={profile.preferences.defaultLanguage}
                   onChange={(e) =>
                     setProfile((p) => ({
@@ -382,7 +270,7 @@ const ProfileSettings = () => {
                 </select>
               </div>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div className="flex justify-end">
               <button
                 type="submit"
                 className="btn btn-primary"
@@ -394,32 +282,11 @@ const ProfileSettings = () => {
           </form>
         </section>
 
-        {/* ── Change Password ── */}
-        <section
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            padding: 24,
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--text-secondary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 20,
-            }}
-          >
-            Change Password
-          </h2>
-          <form
-            onSubmit={handlePasswordSave}
-            style={{ display: "flex", flexDirection: "column", gap: 16 }}
-          >
-            <div className="form-group" style={{ marginBottom: 0 }}>
+        {/* Change Password */}
+        <section className="card">
+          <h2 className="section-title">Change Password</h2>
+          <form onSubmit={handlePasswordSave} className="flex flex-col gap-4">
+            <div className="form-group mb-0">
               <label className="form-label">Current Password</label>
               <input
                 className="form-input"
@@ -431,14 +298,8 @@ const ProfileSettings = () => {
                 }
               />
             </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
-              <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group mb-0">
                 <label className="form-label">New Password</label>
                 <input
                   className="form-input"
@@ -451,7 +312,7 @@ const ProfileSettings = () => {
                   }
                 />
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group mb-0">
                 <label className="form-label">Confirm New Password</label>
                 <input
                   className="form-input"
@@ -464,7 +325,7 @@ const ProfileSettings = () => {
                 />
               </div>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <div className="flex justify-end">
               <button
                 type="submit"
                 className="btn btn-primary"
@@ -476,41 +337,17 @@ const ProfileSettings = () => {
           </form>
         </section>
 
-        {/* ── Danger Zone ── */}
-        <section
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid rgba(239,68,68,0.3)",
-            borderRadius: 12,
-            padding: 24,
-          }}
-        >
-          <h2
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "#f87171",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: 8,
-            }}
-          >
-            Danger Zone
-          </h2>
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--text-muted)",
-              marginBottom: 16,
-            }}
-          >
+        {/* Danger Zone */}
+        <section className="card danger-card">
+          <h2 className="section-title text-error">Danger Zone</h2>
+          <p className="section-description">
             Permanently delete your account and all associated data. This cannot
             be undone.
           </p>
-          <div className="form-group" style={{ marginBottom: 16 }}>
+          <div className="form-group mb-4">
             <label className="form-label">
               Type your username{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
+              <strong className="text-(--text-primary)">
                 {user?.username}
               </strong>{" "}
               to confirm
@@ -522,22 +359,17 @@ const ProfileSettings = () => {
               onChange={(e) => setConfirmDelete(e.target.value)}
             />
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div className="flex justify-end">
             <button
-              className="btn"
+              className="btn btn-error"
               onClick={handleDelete}
               disabled={confirmDelete !== user?.username}
-              style={{
-                background: "rgba(239,68,68,0.1)",
-                color: "#f87171",
-                border: "1px solid rgba(239,68,68,0.3)",
-              }}
             >
               Delete Account
             </button>
           </div>
         </section>
-      </div>
+      </main>
     </div>
   );
 };

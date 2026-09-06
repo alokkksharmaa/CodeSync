@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, Square } from "lucide-react";
 import "./VoiceInput.css";
 
 const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
@@ -9,7 +9,6 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    // Check if browser supports Web Speech API
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -17,8 +16,8 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
       setIsSupported(true);
       const recognition = new SpeechRecognition();
 
-      recognition.continuous = true;
-      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.interimResults = false;
       recognition.lang = "en-US";
 
       recognition.onstart = () => {
@@ -27,18 +26,13 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
       };
 
       recognition.onresult = (event) => {
-        let interimTranscript = "";
         let finalTranscript = "";
-
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
             finalTranscript += transcript + " ";
-          } else {
-            interimTranscript += transcript;
           }
         }
-
         if (finalTranscript && onTranscript) {
           onTranscript(finalTranscript.trim());
         }
@@ -52,6 +46,8 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
           toast.error("Microphone access denied");
         } else if (event.error === "no-speech") {
           toast("No speech detected", { icon: "🤔" });
+        } else if (event.error === "audio-capture") {
+          toast.error("No microphone detected");
         } else {
           toast.error(`Speech error: ${event.error}`);
         }
@@ -84,32 +80,22 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
     }
   };
 
-  if (!isSupported) {
-    return (
-      <button
-        className={`voice-input-btn not-supported ${className}`}
-        disabled
-        title="Speech recognition not supported in this browser"
-      >
-        <span className="voice-input-icon">
-          <MicOff size={14} />
-        </span>
-        <span>Not Supported</span>
-      </button>
-    );
-  }
+  if (!isSupported) return null;
 
   return (
     <button
+      type="button"
       className={`voice-input-btn ${isListening ? "listening" : ""} ${className}`}
       onClick={toggleListening}
       disabled={disabled}
       title={isListening ? "Stop listening" : "Start voice input"}
+      aria-label={isListening ? "Stop listening" : "Start voice input"}
     >
       <span className="voice-input-icon">
-        {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+        {isListening ? <Square size={14} /> : <Mic size={14} />}
       </span>
-      <span>{isListening ? "Listening..." : "Voice"}</span>
+      {isListening ? <span>Listening</span> : null}
+      {isListening && <span className="voice-input-wave" />}
     </button>
   );
 };

@@ -53,7 +53,7 @@ const buildTree = (files) => {
       (p) =>
         p.type === "folder" &&
         ((p.path === "/" && parentPath === `/${p.name}`) ||
-          (p.path !== "/" && parentPath === `${p.path}/${p.name}`))
+          (p.path !== "/" && parentPath === `${p.path}/${p.name}`)),
     );
 
     if (parent && map[parent._id]) {
@@ -73,9 +73,7 @@ const filterTree = (nodes, query) => {
 
   return nodes
     .map((node) => {
-      const matches = node.name
-        .toLowerCase()
-        .includes(query.toLowerCase());
+      const matches = node.name.toLowerCase().includes(query.toLowerCase());
 
       if (node.type === "folder") {
         const filteredChildren = filterTree(node.children || [], query);
@@ -104,15 +102,12 @@ const highlightMatch = (text, query) => {
 
   return text.split(regex).map((part, index) =>
     part.toLowerCase() === query.toLowerCase() ? (
-      <span
-        key={index}
-        className="bg-blue-500/20 text-blue-300 rounded px-0.5"
-      >
+      <span key={index} className="bg-blue-500/20 text-blue-300 rounded px-0.5">
         {part}
       </span>
     ) : (
       part
-    )
+    ),
   );
 };
 
@@ -143,7 +138,7 @@ const InlineInput = ({ onSubmit, onCancel, placeholder }) => {
 
       submitting.current = false;
     },
-    [value, onSubmit, onCancel]
+    [value, onSubmit, onCancel],
   );
 
   const handleKeyDown = (e) => {
@@ -246,7 +241,7 @@ const TreeNode = ({
       const result = await deleteFile(node._id);
 
       onFilesChange((prev) =>
-        prev.filter((f) => !result.deletedIds.includes(String(f._id)))
+        prev.filter((f) => !result.deletedIds.includes(String(f._id))),
       );
 
       if (result.deletedIds.includes(String(activeFileId))) {
@@ -289,11 +284,17 @@ const TreeNode = ({
           onClick={() => setExpanded((v) => !v)}
         >
           <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="folder-arrow text-gray-500 w-4 text-center">
-              {expanded ? "▾" : "▸"}
+            <span className="folder-arrow text-gray-500 w-4 flex items-center justify-center shrink-0">
+              {expanded ? (
+                <ChevronDown size={13} />
+              ) : (
+                <ChevronRight size={13} />
+              )}
             </span>
 
-            <span className="folder-icon text-blue-400 opacity-80">📁</span>
+            <span className="folder-icon text-blue-400 opacity-90 shrink-0 flex items-center">
+              <Folder size={14} fill="currentColor" fillOpacity={0.15} />
+            </span>
 
             {renaming ? (
               <InlineInput
@@ -318,7 +319,7 @@ const TreeNode = ({
                 title="New file"
                 onClick={() => setCreating("file")}
               >
-                +F
+                <FilePlus size={13} />
               </button>
 
               <button
@@ -326,7 +327,7 @@ const TreeNode = ({
                 title="New folder"
                 onClick={() => setCreating("folder")}
               >
-                +D
+                <FolderPlus size={13} />
               </button>
 
               <button
@@ -334,7 +335,7 @@ const TreeNode = ({
                 title="Rename"
                 onClick={() => setRenaming(true)}
               >
-                ✎
+                <Pencil size={12} />
               </button>
 
               <button
@@ -342,7 +343,7 @@ const TreeNode = ({
                 title="Delete"
                 onClick={handleDelete}
               >
-                ✕
+                <X size={13} />
               </button>
             </div>
           )}
@@ -401,7 +402,7 @@ const TreeNode = ({
       onClick={() => onFileSelect(node._id)}
     >
       <div className="flex items-center gap-2 overflow-hidden">
-        <span className="file-icon opacity-80 w-4 text-center">
+        <span className="file-icon w-4 flex items-center justify-center shrink-0">
           {getIcon(node.name, node.type)}
         </span>
 
@@ -431,7 +432,7 @@ const TreeNode = ({
               setRenaming(true);
             }}
           >
-            ✎
+            <Pencil size={12} />
           </button>
 
           <button
@@ -439,7 +440,7 @@ const TreeNode = ({
             title="Delete"
             onClick={handleDelete}
           >
-            ✕
+            <X size={13} />
           </button>
         </div>
       )}
@@ -470,7 +471,7 @@ const FileExplorer = ({
     if (submittingRoot.current) return;
 
     const dup = files.find(
-      (f) => f.path === "/" && f.name.toLowerCase() === name.toLowerCase()
+      (f) => f.path === "/" && f.name.toLowerCase() === name.toLowerCase(),
     );
 
     if (dup) {
@@ -523,7 +524,7 @@ const FileExplorer = ({
               title="New File"
               onClick={() => setCreatingRoot("file")}
             >
-              +F
+              <FilePlus size={14} />
             </button>
 
             <button
@@ -531,7 +532,7 @@ const FileExplorer = ({
               title="New Folder"
               onClick={() => setCreatingRoot("folder")}
             >
-              +D
+              <FolderPlus size={14} />
             </button>
           </div>
         )}

@@ -37,7 +37,7 @@ jobs:
 
       - name: Build
         env:
-          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_BACKEND_URL: ${{ secrets['VITE_BACKEND_URL'] }}
         run: npm run build
 
       - name: Upload artifact

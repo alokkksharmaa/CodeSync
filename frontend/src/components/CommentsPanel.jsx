@@ -1,23 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
-import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
+import { MessageSquare, Pencil, Trash2, Plus } from "lucide-react";
 import {
   fetchComments,
   createComment,
   updateComment,
   deleteComment,
   toggleReaction,
-} from '../services/commentApi';
-import './CommentsPanel.css';
+} from "../services/commentApi";
+import "./CommentsPanel.css";
 
-const EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '🚀', '👀', '🔥', '💯'];
+const EMOJI_OPTIONS = ["👍", "❤️", "😂", "🎉", "🚀", "👀", "🔥", "💯"];
 
 const CommentsPanel = ({ workspaceId, socket }) => {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [editText, setEditText] = useState('');
+  const [editText, setEditText] = useState("");
   const [loading, setLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const commentsEndRef = useRef(null);
@@ -30,7 +31,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
         setComments(data.reverse()); // Show oldest first
         setLoading(false);
       } catch (error) {
-        toast.error('Failed to load comments');
+        toast.error("Failed to load comments");
         setLoading(false);
       }
     };
@@ -41,37 +42,37 @@ const CommentsPanel = ({ workspaceId, socket }) => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('new_comment', (comment) => {
+    socket.on("new_comment", (comment) => {
       setComments((prev) => [...prev, comment]);
       scrollToBottom();
     });
 
-    socket.on('comment_updated', (updatedComment) => {
+    socket.on("comment_updated", (updatedComment) => {
       setComments((prev) =>
-        prev.map((c) => (c._id === updatedComment._id ? updatedComment : c))
+        prev.map((c) => (c._id === updatedComment._id ? updatedComment : c)),
       );
     });
 
-    socket.on('comment_deleted', ({ commentId }) => {
+    socket.on("comment_deleted", ({ commentId }) => {
       setComments((prev) => prev.filter((c) => c._id !== commentId));
     });
 
-    socket.on('reaction_updated', (updatedComment) => {
+    socket.on("reaction_updated", (updatedComment) => {
       setComments((prev) =>
-        prev.map((c) => (c._id === updatedComment._id ? updatedComment : c))
+        prev.map((c) => (c._id === updatedComment._id ? updatedComment : c)),
       );
     });
 
     return () => {
-      socket.off('new_comment');
-      socket.off('comment_updated');
-      socket.off('comment_deleted');
-      socket.off('reaction_updated');
+      socket.off("new_comment");
+      socket.off("comment_updated");
+      socket.off("comment_deleted");
+      socket.off("reaction_updated");
     };
   }, [socket]);
 
   const scrollToBottom = () => {
-    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSubmit = async (e) => {
@@ -81,14 +82,14 @@ const CommentsPanel = ({ workspaceId, socket }) => {
     try {
       const comment = await createComment(workspaceId, newComment);
       setComments((prev) => [...prev, comment]);
-      setNewComment('');
-      
+      setNewComment("");
+
       // Notify others via socket
-      socket?.emit('comment_added', { workspaceId, comment });
-      
+      socket?.emit("comment_added", { workspaceId, comment });
+
       scrollToBottom();
     } catch (error) {
-      toast.error('Failed to post comment');
+      toast.error("Failed to post comment");
     }
   };
 
@@ -98,33 +99,33 @@ const CommentsPanel = ({ workspaceId, socket }) => {
     try {
       const updated = await updateComment(commentId, editText);
       setComments((prev) =>
-        prev.map((c) => (c._id === commentId ? updated : c))
+        prev.map((c) => (c._id === commentId ? updated : c)),
       );
       setEditingId(null);
-      setEditText('');
-      
+      setEditText("");
+
       // Notify others via socket
-      socket?.emit('comment_updated', { workspaceId, comment: updated });
-      
-      toast.success('Comment updated');
+      socket?.emit("comment_updated", { workspaceId, comment: updated });
+
+      toast.success("Comment updated");
     } catch (error) {
-      toast.error('Failed to update comment');
+      toast.error("Failed to update comment");
     }
   };
 
   const handleDelete = async (commentId) => {
-    if (!window.confirm('Delete this comment?')) return;
+    if (!window.confirm("Delete this comment?")) return;
 
     try {
       await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c._id !== commentId));
-      
+
       // Notify others via socket
-      socket?.emit('comment_deleted', { workspaceId, commentId });
-      
-      toast.success('Comment deleted');
+      socket?.emit("comment_deleted", { workspaceId, commentId });
+
+      toast.success("Comment deleted");
     } catch (error) {
-      toast.error('Failed to delete comment');
+      toast.error("Failed to delete comment");
     }
   };
 
@@ -132,15 +133,15 @@ const CommentsPanel = ({ workspaceId, socket }) => {
     try {
       const updated = await toggleReaction(commentId, emoji);
       setComments((prev) =>
-        prev.map((c) => (c._id === commentId ? updated : c))
+        prev.map((c) => (c._id === commentId ? updated : c)),
       );
-      
+
       // Notify others via socket
-      socket?.emit('reaction_toggled', { workspaceId, comment: updated });
-      
+      socket?.emit("reaction_toggled", { workspaceId, comment: updated });
+
       setShowEmojiPicker(null);
     } catch (error) {
-      toast.error('Failed to add reaction');
+      toast.error("Failed to add reaction");
     }
   };
 
@@ -151,7 +152,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditText('');
+    setEditText("");
   };
 
   const formatTime = (timestamp) => {
@@ -162,7 +163,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'just now';
+    if (minutes < 1) return "just now";
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
@@ -184,7 +185,9 @@ const CommentsPanel = ({ workspaceId, socket }) => {
     return (
       <div className="comments-panel">
         <div className="comments-panel-header">
-          <h3 className="comments-panel-title">💬 Comments</h3>
+          <h3 className="comments-panel-title">
+            <MessageSquare size={14} /> Comments
+          </h3>
         </div>
         <div className="comments-loading">
           <div className="loading-spinner"></div>
@@ -199,7 +202,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
       {/* Header */}
       <div className="comments-panel-header">
         <h3 className="comments-panel-title">
-          💬 Comments
+          <MessageSquare size={14} /> Comments
           <span className="comments-count">{comments.length}</span>
         </h3>
       </div>
@@ -208,7 +211,9 @@ const CommentsPanel = ({ workspaceId, socket }) => {
       <div className="comments-list">
         {comments.length === 0 ? (
           <div className="comments-empty">
-            <div className="comments-empty-icon">💬</div>
+            <div className="comments-empty-icon">
+              <MessageSquare size={28} />
+            </div>
             <p className="comments-empty-text">No comments yet</p>
             <p className="comments-empty-subtext">Be the first to comment!</p>
           </div>
@@ -241,7 +246,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                       title="Edit"
                       aria-label="Edit comment"
                     >
-                      ✏️
+                      <Pencil size={12} />
                     </button>
                     <button
                       onClick={() => handleDelete(comment._id)}
@@ -249,7 +254,7 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                       title="Delete"
                       aria-label="Delete comment"
                     >
-                      🗑️
+                      <Trash2 size={12} />
                     </button>
                   </div>
                 )}
@@ -294,15 +299,15 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                       <button
                         key={emoji}
                         onClick={() => handleReaction(comment._id, emoji)}
-                        className={`reaction-btn ${hasReacted ? 'reacted' : ''}`}
-                        title={users.map((u) => u.username).join(', ')}
-                        aria-label={`${emoji} reaction by ${users.length} user${users.length > 1 ? 's' : ''}`}
+                        className={`reaction-btn ${hasReacted ? "reacted" : ""}`}
+                        title={users.map((u) => u.username).join(", ")}
+                        aria-label={`${emoji} reaction by ${users.length} user${users.length > 1 ? "s" : ""}`}
                       >
                         <span className="reaction-emoji">{emoji}</span>
                         <span className="reaction-count">{users.length}</span>
                       </button>
                     );
-                  }
+                  },
                 )}
 
                 {/* Add Reaction Button */}
@@ -310,14 +315,14 @@ const CommentsPanel = ({ workspaceId, socket }) => {
                   <button
                     onClick={() =>
                       setShowEmojiPicker(
-                        showEmojiPicker === comment._id ? null : comment._id
+                        showEmojiPicker === comment._id ? null : comment._id,
                       )
                     }
                     className="add-reaction-btn"
                     title="Add reaction"
                     aria-label="Add reaction"
                   >
-                    ➕
+                    <Plus size={12} />
                   </button>
 
                   {/* Emoji Picker */}
@@ -358,9 +363,9 @@ const CommentsPanel = ({ workspaceId, socket }) => {
             className={`char-counter ${
               newComment.length > 900
                 ? newComment.length > 980
-                  ? 'error'
-                  : 'warning'
-                : ''
+                  ? "error"
+                  : "warning"
+                : ""
             }`}
           >
             {newComment.length}/1000

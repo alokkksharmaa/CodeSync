@@ -1,4 +1,11 @@
-import { useState } from 'react';
+import { useState } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Terminal,
+  Zap,
+} from "lucide-react";
 
 const CodeExecutionPanel = ({ output, isExecuting, onClear }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -11,10 +18,22 @@ const CodeExecutionPanel = ({ output, isExecuting, onClear }) => {
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-gray-400 hover:text-gray-200 transition"
           >
-            {isExpanded ? '▼' : '▶'}
+            {isExpanded ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
           </button>
-          <span className="text-sm font-semibold text-gray-300">
-            {isExecuting ? '⚡ Executing...' : '📋 Output'}
+          <span className="text-sm font-semibold text-gray-300 flex items-center gap-1.5">
+            {isExecuting ? (
+              <>
+                <Zap size={13} className="text-yellow-400" /> Executing...
+              </>
+            ) : (
+              <>
+                <Terminal size={13} /> Output
+              </>
+            )}
           </span>
         </div>
         <button
@@ -25,12 +44,12 @@ const CodeExecutionPanel = ({ output, isExecuting, onClear }) => {
           Clear
         </button>
       </div>
-      
+
       {isExpanded && (
         <div className="execution-output flex-1 overflow-auto p-4 font-mono text-sm text-gray-300 min-h-[120px] max-h-[300px]">
           {isExecuting ? (
             <div className="flex items-center gap-2 text-blue-400">
-              <div className="animate-spin">⚙️</div>
+              <Loader2 size={15} className="animate-spin" />
               <span>Running code...</span>
             </div>
           ) : output ? (

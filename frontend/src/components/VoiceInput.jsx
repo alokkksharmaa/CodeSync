@@ -1,37 +1,39 @@
-import { useState, useEffect, useRef } from 'react';
-import toast from 'react-hot-toast';
-import './VoiceInput.css';
+import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
+import { Mic, MicOff } from "lucide-react";
+import "./VoiceInput.css";
 
-const VoiceInput = ({ onTranscript, disabled = false, className = '' }) => {
+const VoiceInput = ({ onTranscript, disabled = false, className = "" }) => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
     // Check if browser supports Web Speech API
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (SpeechRecognition) {
       setIsSupported(true);
       const recognition = new SpeechRecognition();
-      
+
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = "en-US";
 
       recognition.onstart = () => {
         setIsListening(true);
-        toast.success('🎤 Listening...', { duration: 2000 });
+        toast.success("Listening...", { duration: 2000, icon: "🎤" });
       };
 
       recognition.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
+        let interimTranscript = "";
+        let finalTranscript = "";
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
+            finalTranscript += transcript + " ";
           } else {
             interimTranscript += transcript;
           }
@@ -43,13 +45,13 @@ const VoiceInput = ({ onTranscript, disabled = false, className = '' }) => {
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        console.error("Speech recognition error:", event.error);
         setIsListening(false);
-        
-        if (event.error === 'not-allowed') {
-          toast.error('Microphone access denied');
-        } else if (event.error === 'no-speech') {
-          toast('No speech detected', { icon: '🤔' });
+
+        if (event.error === "not-allowed") {
+          toast.error("Microphone access denied");
+        } else if (event.error === "no-speech") {
+          toast("No speech detected", { icon: "🤔" });
         } else {
           toast.error(`Speech error: ${event.error}`);
         }
@@ -76,7 +78,7 @@ const VoiceInput = ({ onTranscript, disabled = false, className = '' }) => {
 
     if (isListening) {
       recognitionRef.current.stop();
-      toast('Stopped listening', { icon: '🛑' });
+      toast("Stopped listening", { icon: "🛑" });
     } else {
       recognitionRef.current.start();
     }
@@ -89,7 +91,9 @@ const VoiceInput = ({ onTranscript, disabled = false, className = '' }) => {
         disabled
         title="Speech recognition not supported in this browser"
       >
-        <span className="voice-input-icon">🎤</span>
+        <span className="voice-input-icon">
+          <MicOff size={14} />
+        </span>
         <span>Not Supported</span>
       </button>
     );
@@ -97,15 +101,15 @@ const VoiceInput = ({ onTranscript, disabled = false, className = '' }) => {
 
   return (
     <button
-      className={`voice-input-btn ${isListening ? 'listening' : ''} ${className}`}
+      className={`voice-input-btn ${isListening ? "listening" : ""} ${className}`}
       onClick={toggleListening}
       disabled={disabled}
-      title={isListening ? 'Stop listening' : 'Start voice input'}
+      title={isListening ? "Stop listening" : "Start voice input"}
     >
       <span className="voice-input-icon">
-        {isListening ? '🔴' : '🎤'}
+        {isListening ? <MicOff size={14} /> : <Mic size={14} />}
       </span>
-      <span>{isListening ? 'Listening...' : 'Voice'}</span>
+      <span>{isListening ? "Listening..." : "Voice"}</span>
     </button>
   );
 };

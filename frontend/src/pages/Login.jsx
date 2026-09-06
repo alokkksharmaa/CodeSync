@@ -1,68 +1,76 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
-import api from '../services/api'
-import { useAuth } from '../context/AuthContext'
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import { Zap, Eye, EyeOff } from "lucide-react";
 
-const ROTATING_WORDS = ['build', 'share', 'manage', 'code', 'design']
+const ROTATING_WORDS = ["build", "share", "manage", "code", "design"];
 
 const AnimatedWord = () => {
-  const [index, setIndex] = useState(0)
-  const [visible, setVisible] = useState(true)
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setVisible(false)
+      setVisible(false);
       setTimeout(() => {
-        setIndex(prev => (prev + 1) % ROTATING_WORDS.length)
-        setVisible(true)
-      }, 400)
-    }, 2000)
-    return () => clearInterval(interval)
-  }, [])
+        setIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+        setVisible(true);
+      }, 400);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <span className={`auth-hero-word ${visible ? 'word-visible' : 'word-hidden'}`}>
+    <span
+      className={`auth-hero-word ${visible ? "word-visible" : "word-hidden"}`}
+    >
       {ROTATING_WORDS[index]}
     </span>
-  )
-}
+  );
+};
 
 const Login = () => {
-  const navigate = useNavigate()
-  const { login } = useAuth()
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const emailRef = useRef(null)
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const emailRef = useRef(null);
 
-  useEffect(() => { emailRef.current?.focus() }, [])
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
 
   const handleChange = (e) =>
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!form.email || !form.password) {
-      toast.error('Email and password are required.')
-      return
+      toast.error("Email and password are required.");
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
-      const res = await api.post('/api/auth/login', { email: form.email, password: form.password })
-      login(res.data)
-      toast.success(`Welcome back, ${res.data.user.username}!`)
-      navigate('/dashboard')
+      const res = await api.post("/api/auth/login", {
+        email: form.email,
+        password: form.password,
+      });
+      login(res.data);
+      toast.success(`Welcome back, ${res.data.user.username}!`);
+      navigate("/dashboard");
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed.')
+      toast.error(err.response?.data?.message || "Login failed.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`
-  }
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+  };
 
   return (
     <div className="auth-split">
@@ -72,7 +80,7 @@ const Login = () => {
         <div className="auth-hero-glow" />
         <div className="auth-hero-content">
           <div className="auth-hero-logo">
-            <span>⚡🧑🏻‍💻</span>
+            <Zap size={14} strokeWidth={2.5} />
             <span>CodeSync</span>
           </div>
           <h1 className="auth-hero-headline">
@@ -91,16 +99,33 @@ const Login = () => {
         <div className="auth-card">
           <div className="auth-header mb-8 text-center max-w-sm mx-auto">
             <div className="auth-mobile-brand flex items-center justify-center gap-2 mb-6 md:hidden">
-              <span className="text-yellow-400 text-xl">⚡🧑🏻‍💻</span>
-              <span className="text-xl font-bold tracking-tight text-white font-display">CodeSync</span>
+              <span className="w-7 h-7 rounded-md bg-blue-500/15 text-blue-400 flex items-center justify-center">
+                <Zap size={14} strokeWidth={2.5} />
+              </span>
+              <span className="text-xl font-bold tracking-tight text-white font-display">
+                CodeSync
+              </span>
             </div>
-            <h1 className="auth-title text-3xl md:text-4xl font-semibold tracking-tight text-white mb-2 font-display">Welcome back</h1>
-            <p className="auth-subtitle text-lg text-gray-400">Sign in to your workspace</p>
+            <h1 className="auth-title text-3xl md:text-4xl font-semibold tracking-tight text-white mb-2 font-display">
+              Welcome back
+            </h1>
+            <p className="auth-subtitle text-lg text-gray-400">
+              Sign in to your workspace
+            </p>
           </div>
 
-          <form className="auth-form flex flex-col gap-5 max-w-sm mx-auto w-full" onSubmit={handleSubmit} noValidate>
+          <form
+            className="auth-form flex flex-col gap-5 max-w-sm mx-auto w-full"
+            onSubmit={handleSubmit}
+            noValidate
+          >
             <div className="form-group flex flex-col gap-1.5">
-              <label htmlFor="email" className="form-label text-sm font-medium text-gray-300">Email</label>
+              <label
+                htmlFor="email"
+                className="form-label text-sm font-medium text-gray-300"
+              >
+                Email
+              </label>
               <input
                 id="email"
                 name="email"
@@ -116,12 +141,17 @@ const Login = () => {
             </div>
 
             <div className="form-group flex flex-col gap-1.5">
-              <label htmlFor="password" className="form-label text-sm font-medium text-gray-300">Password</label>
+              <label
+                htmlFor="password"
+                className="form-label text-sm font-medium text-gray-300"
+              >
+                Password
+              </label>
               <div className="password-input-wrapper relative flex items-center">
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   className="form-input h-12 w-full px-4 rounded-lg bg-gray-800/60 border border-gray-700/60 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 hover:border-blue-500/40 transition-all backdrop-blur-sm pr-12"
                   placeholder="Your password"
                   value={form.password}
@@ -133,13 +163,9 @@ const Login = () => {
                   type="button"
                   className="password-toggle absolute right-3 text-gray-400 hover:text-gray-200 p-1 rounded-md hover:bg-white/5 transition"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  )}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -156,31 +182,52 @@ const Login = () => {
               className="w-full h-12 rounded-lg border border-gray-700 bg-gray-800/60 text-white flex items-center justify-center gap-3 hover:bg-gray-700/60 transition-all"
             >
               <svg width="18" height="18" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                <path
+                  fill="#EA4335"
+                  d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                />
               </svg>
               Continue with Google
             </button>
 
             <button
               type="submit"
-              className={`btn btn-primary w-full h-12 mt-2 rounded-lg text-lg font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center ${loading ? 'opacity-80 pointer-events-none' : ''}`}
+              className={`btn btn-primary w-full h-12 mt-2 rounded-lg text-lg font-medium transition-all hover:-translate-y-0.5 flex items-center justify-center ${loading ? "opacity-80 pointer-events-none" : ""}`}
               disabled={loading}
             >
-              {loading ? <span className="btn-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Sign in'}
+              {loading ? (
+                <span className="btn-spinner w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                "Sign in"
+              )}
             </button>
           </form>
 
           <p className="auth-footer mt-8 text-center text-sm text-gray-400">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="auth-link text-blue-400 hover:text-blue-300 font-medium transition">Create one</Link>
+            Don&apos;t have an account?{" "}
+            <Link
+              to="/signup"
+              className="auth-link text-blue-400 hover:text-blue-300 font-medium transition"
+            >
+              Create one
+            </Link>
           </p>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

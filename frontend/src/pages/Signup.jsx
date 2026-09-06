@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import { Zap, Eye, EyeOff } from 'lucide-react'
 
 const ROTATING_WORDS = ['build', 'share', 'manage', 'code']
 
@@ -70,7 +71,7 @@ const Signup = () => {
         <div className="auth-hero-glow" />
         <div className="auth-hero-content">
           <div className="auth-hero-logo">
-            <span>⚡</span>
+            <Zap size={14} strokeWidth={2.5} />
             <span>CodeSync</span>
           </div>
           <h1 className="auth-hero-headline">
@@ -89,7 +90,7 @@ const Signup = () => {
         <div className="auth-card">
           <div className="auth-header mb-8 text-center max-w-sm mx-auto">
             <div className="auth-mobile-brand flex items-center justify-center gap-2 mb-6 md:hidden">
-              <span className="text-yellow-400 text-xl">⚡🧑🏻‍💻</span>
+              <span className="w-7 h-7 rounded-md bg-blue-500/15 text-blue-400 flex items-center justify-center"><Zap size={14} strokeWidth={2.5} /></span>
               <span className="text-xl font-bold tracking-tight text-white font-display">CodeSync</span>
             </div>
             <h1 className="auth-title text-3xl md:text-4xl font-semibold tracking-tight text-white mb-2 font-display">Create account</h1>
@@ -148,11 +149,7 @@ const Signup = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  )}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>

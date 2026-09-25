@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Suspense, lazy, useState, useEffect } from "react";
 import { useAuth } from "./context/AuthContext";
+import { Auth0Provider } from "@auth0/auth0-react";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -47,78 +48,84 @@ const App = () => {
   if (loading) return null;
 
   return (
-    <Suspense
-      fallback={
-        <div className="fixed inset-0 bg-base flex items-center justify-center z-50">
-          <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <RouteLoader>
-        <Routes>
-          {/* Public routes */}
-          <Route
-            path="/login"
-            element={
-              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              isAuthenticated ? (
-                <Navigate to="/dashboard" replace />
-              ) : (
-                <Signup />
-              )
-            }
-          />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/workspace/:id"
-            element={
-              <ProtectedRoute>
-                <Workspace />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <ProfileSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <Navigate
-                to={isAuthenticated ? "/dashboard" : "/login"}
-                replace
-              />
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <Navigate
-                to={isAuthenticated ? "/dashboard" : "/login"}
-                replace
-              />
-            }
-          />
-        </Routes>
-      </RouteLoader>
-    </Suspense>
+    <Auth0Provider
+      domain="dev-os6j65lfqgqvq8qd.us.auth0.com"
+      clientId="5yb6O7Zpjf6UmCVDAUuwzzTrjQVu4bWi"
+      authorizationParams={{
+      redirect_uri: `${window.location.origin}/auth/callback`,}}>
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 bg-base flex items-center justify-center z-50">
+            <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+          </div>
+        }>
+        <RouteLoader>
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path="/login"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Login />
+                )
+              }/>
+            <Route
+              path="/signup"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <Signup />
+                )
+              }/>
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workspace/:id"
+              element={
+                <ProtectedRoute>
+                  <Workspace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <ProfileSettings />
+                </ProtectedRoute>
+              }/>
+            <Route
+              path="/"
+              element={
+                <Navigate
+                  to={isAuthenticated ? "/dashboard" : "/login"}
+                  replace
+                />
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to={isAuthenticated ? "/dashboard" : "/login"}
+                  replace
+                />
+              }
+            />
+          </Routes>
+        </RouteLoader>
+      </Suspense>
+    </Auth0Provider>
   );
 };
 
